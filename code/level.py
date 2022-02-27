@@ -19,8 +19,9 @@ class Level:
         self.create_map()
 
     def create_map(self):
+        print()
         for row_idx, row in enumerate(WORLD_MAP):
-            print(f"{row_idx if row_idx > 9 else '0' + str(row_idx)} {row}")
+            print(f"{row_idx if row_idx > 9 else ' ' + str(row_idx)}", *row)
             for col_idx, col in enumerate(row):
                 x = col_idx * TILESIZE
                 y = row_idx * TILESIZE
@@ -28,10 +29,9 @@ class Level:
                     Tile((x, y), [self.visible_sprites,
                          self.obstacles_sprites])
                 if col == 'p':
-                    self.player = Player((x, y), [self.visible_sprites])
+                    self.player = Player((x, y), [self.visible_sprites], self.obstacles_sprites)
 
     def run(self):
         """Update and draw the game"""
         self.visible_sprites.draw(self.display_surface)
         self.visible_sprites.update()
-        debug(self.player.direction)

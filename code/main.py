@@ -1,8 +1,8 @@
 import pygame
 import sys
 from settings import *
-from debug import debug
 from level import Level
+from debug import debug
 
 
 class Game:
@@ -10,10 +10,9 @@ class Game:
 
         # general setup
         pygame.init()
-        pygame.display.set_caption('Cyber-RPG')
+        pygame.display.set_caption('Cyber-Zelda')
         self.screen = pygame.display.set_mode((WIDTH, HEIGTH))
         self.clock = pygame.time.Clock()
-
         self.level = Level()
 
     def run(self):
@@ -25,7 +24,6 @@ class Game:
 
             self.screen.fill('black')
             self.level.run()
-            # debug('hello')
             pygame.display.update()
             self.clock.tick(FPS)
 
