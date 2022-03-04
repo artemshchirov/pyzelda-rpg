@@ -9,8 +9,12 @@ class Player(pygame.sprite.Sprite):
         and player object values
     """
 
-    def __init__(self, pos: tuple, groups: list, obstacles_sprites: list):
+    def __init__(self,
+                 pos: tuple,
+                 groups: list,
+                 obstacles_sprites: list):
         super().__init__(groups)
+
         self.image = pygame.image.load(
             r'D:\prog\cyber-zelda-rpg\graphics\test\player.png').convert_alpha()
         self.rect = self.image.get_rect(topleft=pos)

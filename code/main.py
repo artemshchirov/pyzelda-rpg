@@ -10,7 +10,7 @@ class Game:
 
         # general setup
         pygame.init()
-        pygame.display.set_caption('Cyber-Zelda')
+        pygame.display.set_caption('RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGTH))
         self.clock = pygame.time.Clock()
         self.level = Level()

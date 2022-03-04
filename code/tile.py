@@ -3,9 +3,17 @@ from settings import *
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, pos, groups):
+    def __init__(self,
+                 pos: tuple,
+                 groups: list,
+                 sprite_type: str,
+                 surface=pygame.Surface((TILESIZE, TILESIZE))):
         super().__init__(groups)
-        self.image = pygame.image.load(
-            r'D:\prog\cyber-zelda-rpg\graphics\test\rock.png').convert_alpha()
-        self.rect = self.image.get_rect(topleft=pos)
+
+        self.sprite_type = sprite_type
+        self.image = surface
+        if sprite_type == 'object':
+            self.rect = self.image.get_rec(topleft = (pos[0], pos[1] - TILESIZE))
+        else:
+            self.rect = self.image.get_rect(topleft=pos)
         self.hitbox = self.rect.inflate(0, -10)
