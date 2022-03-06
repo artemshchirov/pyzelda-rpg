@@ -5,6 +5,7 @@ from player import Player
 from debug import debug
 from support import *
 from random import choice
+from weapon import Weapon
 
 
 class Level:
@@ -16,6 +17,9 @@ class Level:
         # sprite groups setup
         self.visible_sprites = YSortCameraGroup()
         self.obstacles_sprites = pygame.sprite.Group()
+
+        # attack sprites
+        self.current_attack = None
 
         # sprite setup
         self.create_map()
@@ -32,7 +36,7 @@ class Level:
             'grass': import_folder(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\grass'),
             'objects': import_folder(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\objects'),
         }
-        print('\ngraphics: \n', graphics)
+        # print('\ngraphics: \n', graphics)
 
         for style, layout in layouts.items():
             print('style: ', style)
@@ -64,7 +68,15 @@ class Level:
                                  surf)
 
         self.player = Player(
-            (2000, 1430), [self.visible_sprites], self.obstacles_sprites)
+            (2000, 1430), [self.visible_sprites], self.obstacles_sprites, self.create_attack, self.destroy_attack)
+
+    def create_attack(self):
+        self.current_attack = Weapon(self.player, [self.visible_sprites])
+
+    def destroy_attack(self):
+        if self.current_attack:
+            self.current_attack.kill()
+        self.current_attack = None  # ? in if
 
     def run(self):
         """Update and draw the game"""
