@@ -23,14 +23,14 @@ class Level:
     def create_map(self):
 
         layouts = {
-            'boundary': import_csv_layout(r'D:\prog\cyber-zelda-rpg\code\map\map_FloorBlocks.csv'),
-            'grass': import_csv_layout(r'D:\prog\cyber-zelda-rpg\code\map\map_Grass.csv'),
-            'object': import_csv_layout(r'D:\prog\cyber-zelda-rpg\code\map\map_Objects.csv'),
+            'boundary': import_csv_layout(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\code\map\map_FloorBlocks.csv'),
+            'grass': import_csv_layout(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\code\map\map_Grass.csv'),
+            'object': import_csv_layout(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\code\map\map_Objects.csv'),
         }
 
         graphics = {
-            'grass': import_folder(r'D:\prog\cyber-zelda-rpg\graphics\grass'),
-            'objects': import_folder(r'D:\prog\cyber-zelda-rpg\graphics\objects'),
+            'grass': import_folder(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\grass'),
+            'objects': import_folder(r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\objects'),
         }
         print('\ngraphics: \n', graphics)
 
@@ -70,6 +70,7 @@ class Level:
         """Update and draw the game"""
         self.visible_sprites.custom_draw(self.player)
         self.visible_sprites.update()
+        debug(self.player.status, 400, 10)
 
 
 class YSortCameraGroup(pygame.sprite.Group):
@@ -88,7 +89,7 @@ class YSortCameraGroup(pygame.sprite.Group):
 
         # creating floor
         self.floor_surf = pygame.image.load(
-            r'D:\prog\cyber-zelda-rpg\graphics\tilemap\ground.png').convert()
+            r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\tilemap\ground.png').convert()
         self.floor_rect = self.floor_surf.get_rect(topleft=(0, 0))
 
         print(f"self.floor_stuf : {self.floor_surf}")

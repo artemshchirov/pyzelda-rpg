@@ -8,7 +8,7 @@ from debug import debug
 class Game:
     def __init__(self):
 
-        # general setup
+        # general setup  ==
         pygame.init()
         pygame.display.set_caption('RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGTH))
