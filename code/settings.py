@@ -36,12 +36,16 @@ weapon_data = {
 # ['x','x','x','x','x','x','x','x','x','x','x','x','x','x','x','x','x','x','x','x'],
 # ]
 
-# work
-# First of all, thank you for your tutorial! You have done a great deal of work:)
-# But when I see some of the decisions you made, my eye twitching a little...
-# The game is absolutely unscalable (may be you will rewrite it later in the video I have seen only an hour of your tutorial yet) . You call update method for all visible objects when in fact only player has update method. You check collisions with all obstacles when you can check only with objects in small area around player. And it absolutely blew my mind when you decided to sort all objects before drawing at each frame!!! When the only thing which changes the relative position is player!
 
-# I think that you at least have to tell people that there is a better way to write your code:)
-
-# To be more constructive. The usual way to deal with collisions is geohash. You have to store your collidable objects in a hashmap with rounded coordinates as keys. Then you have constant complexity of computing collisions.
-# And you can store static objects in sorted group apart from dynamic then at each step you will have to sort only dynamic object which are present on the screen. Keeping in mind that you usually have way more static objects than dynamic, it will be a significant reduce in computational complexity.
+# The game is absolutely unscalable (may be you will rewrite it later in the video 
+# You call update method for all visible objects when in fact only player has update method. 
+# You check collisions with all obstacles when you can check only with objects in small area around player. 
+# And it absolutely blew my mind when you decided to sort all objects before drawing at each frame. 
+# When the only thing which changes the relative position is player!
+# To be more constructive. The usual way to deal with collisions is geohash. 
+# You have to store your collidable objects in a hashmap with rounded coordinates as keys. 
+# Then you have constant complexity of computing collisions.
+# And you can store static objects in sorted group apart from dynamic 
+# then at each step you will have to sort only dynamic object which are present on the screen. 
+# Keeping in mind that you usually have way more static objects than dynamic, 
+# it will be a significant reduce in computational complexity.
