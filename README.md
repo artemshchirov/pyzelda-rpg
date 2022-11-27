@@ -1,1 +1,31 @@
 # PYTHON ⚔ Like-Zelda RPG
+
+## Have a look at the project
+
+```bash
+git clone https://github.com/artemshchirov/like-zelda-rpg.git
+cd like-zelda-rpg
+pip install pygame
+python code/main.py
+```
+
+![image_2022-11-28_01-22-10](https://user-images.githubusercontent.com/78075439/204165230-b9c48243-f1b8-4906-8088-5a5233865587.png)
+
+Like-Zelda RPG written in python based on [tutorial](https://www.youtube.com/watch?v=QU1pPzEGrqw)
+
+## TODO
+
+- [x] Level setup
+- [x] Creating the player
+- [x] Creating the camera
+- [x] Graphics
+- [x] Player animations
+- [x] Weapons
+- [ ] UI
+- [ ] Magic setup
+- [ ] Enemy creation
+- [ ] Player-enemy interaction
+- [ ] Particles
+- [ ] Spells
+- [ ] Upgrade system and menu
+- [ ] sound
