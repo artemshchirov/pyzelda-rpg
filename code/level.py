@@ -109,9 +109,9 @@ class Level:
             self.current_attack.kill()
         self.current_attack = None
 
-    def run(self):
+    def run(self, dt):
         self.visible_sprites.custom_draw(self.player)
-        self.visible_sprites.update()
+        self.visible_sprites.update(dt)
         self.visible_sprites.enemy_update(self.player)
         self.ui.display(self.player)
 

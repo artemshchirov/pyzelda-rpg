@@ -2,35 +2,46 @@ import pygame
 
 
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, groups):
+    def __init__(self, groups, pos):
         super().__init__(groups)
         self.frame_index = 0
-        self.animation_speed = 0.15
+        self.animation_speed = 4
         self.direction = pygame.math.Vector2()
 
-    def move(self, speed):
+    def move(self, speed, pos, dt):
+        self.pos = pos
+
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
 
-        self.hitbox.x += self.direction.x * speed
+        # horizontal movement
+        self.pos.x += self.direction.x * speed * dt
+        self.hitbox.centerx = round(self.pos.x)
+        self.rect.centerx = self.hitbox.centerx
         self.collision('horizontal')
-        self.hitbox.y += self.direction.y * speed
+
+        # vertical movement
+        self.pos.y += self.direction.y * speed * dt
+        self.hitbox.centery = round(self.pos.y)
+        self.rect.centery = self.hitbox.centery
         self.collision('vertical')
-        self.rect.center = self.hitbox.center
 
     def collision(self, direction):
-        if direction == 'vertical':
-            for sprite in self.obstacle_sprites:
+        for sprite in self.obstacle_sprites.sprites():
+            if hasattr(sprite, 'hitbox'):
                 if sprite.hitbox.colliderect(self.hitbox):
-                    if self.direction.y < 0:  # up
-                        self.hitbox.top = sprite.hitbox.bottom
-                    if self.direction.y > 0:  # down
-                        self.hitbox.bottom = sprite.hitbox.top
+                    if direction == 'horizontal':
+                        if self.direction.x > 0:  # moving right
+                            self.hitbox.right = sprite.hitbox.left
+                        if self.direction.x < 0:  # moving left
+                            self.hitbox.left = sprite.hitbox.right
+                        self.rect.centerx = self.hitbox.centerx
+                        self.pos.x = self.hitbox.centerx
 
-        if direction == 'horizontal':
-            for sprite in self.obstacle_sprites:
-                if sprite.hitbox.colliderect(self.hitbox):
-                    if self.direction.x < 0:  # left
-                        self.hitbox.left = sprite.hitbox.right
-                    if self.direction.x > 0:  # right
-                        self.hitbox.right = sprite.hitbox.left
+                    if direction == 'vertical':
+                        if self.direction.y < 0:  # moving up
+                            self.hitbox.top = sprite.hitbox.bottom
+                        if self.direction.y > 0:  # moving down
+                            self.hitbox.bottom = sprite.hitbox.top
+                        self.rect.centery = self.hitbox.centery
+                        self.pos.y = self.hitbox.centery

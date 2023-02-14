@@ -6,7 +6,7 @@ from entity import Entity
 
 class Enemy(Entity):
     def __init__(self, monster_name, pos, groups, obstacle_sprites):
-        super().__init__(groups)
+        super().__init__(groups, pos)
         # general setup
         self.sprite_type = 'enemy'
 
@@ -14,11 +14,12 @@ class Enemy(Entity):
         self.import_graphics(monster_name)
         self.status = 'idle'
         self.image = self.animations[self.status][self.frame_index]
+        self.rect = self.image.get_rect(topleft=pos)
 
         # movement
-        self.rect = self.image.get_rect(topleft=pos)
         self.hitbox = self.rect.inflate(0, -10)
         self.obstacle_sprites = obstacle_sprites
+        self.pos = pygame.math.Vector2(self.rect.center)
 
         # stats
         self.monster_name = monster_name
@@ -75,17 +76,18 @@ class Enemy(Entity):
         else:
             self.direction = pygame.math.Vector2()
 
-    def animate(self):
+    def animate(self, dt):
         animation = self.animations[self.status]
 
-        self.frame_index += self.animation_speed
+        self.frame_index += self.animation_speed * dt
         if self.frame_index >= len(animation):
             if self.status == 'attack':
                 self.can_attack = False
             self.frame_index = 0
 
         self.image = animation[int(self.frame_index)]
-        self.rect = self.image.get_rect(center=self.hitbox.center)
+        # TODO look at this
+        # self.rect = self.image.get_rect(center=self.hitbox.center)
 
     def cooldown(self):
         if not self.can_attack:
@@ -93,9 +95,9 @@ class Enemy(Entity):
             if current_time - self.attack_time >= self.attack_cooldown:
                 self.can_attack = True
 
-    def update(self):
-        self.move(self.speed)
-        self.animate()
+    def update(self, dt):
+        self.move(self.speed, self.pos, dt)
+        self.animate(dt)
         self.cooldown()
 
     def enemy_update(self, player):

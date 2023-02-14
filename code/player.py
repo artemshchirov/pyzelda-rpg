@@ -6,7 +6,7 @@ from entity import Entity
 
 class Player(Entity):
     def __init__(self, pos, groups, obstacle_sprites, create_attack, destroy_attack, create_magic):
-        super().__init__(groups)
+        super().__init__(groups, pos)
         player_path = get_path('../graphics/test/player.png')
         self.image = pygame.image.load(player_path).convert_alpha()
         self.rect = self.image.get_rect(topleft=pos)
@@ -14,13 +14,13 @@ class Player(Entity):
 
         # graphics
         self.import_player_assets()
-        self.status = 'up'
+        self.status = 'down'
 
         # movement
-        self.speed = 5
         self.attacking = False
         self.attack_cooldown = 400
         self.attack_time = None
+        self.pos = pygame.math.Vector2(self.rect.center)
 
         self.obstacle_sprites = obstacle_sprites
 
@@ -46,7 +46,7 @@ class Player(Entity):
             'energy': 60,
             'attack': 10,
             'magic': 4,
-            'speed': 6
+            'speed': 300
         }
         self.health = self.stats['health'] * 0.5
         self.energy = self.stats['energy'] * 0.8
@@ -160,19 +160,18 @@ class Player(Entity):
             if current_time - self.magic_switch_time >= self.switch_duration_cooldown:
                 self.can_switch_magic = True
 
-    def animate(self):
+    def animate(self, dt):
         animation = self.animations[self.status]
 
-        self.frame_index += self.animation_speed
+        self.frame_index += self.animation_speed * dt
         if self.frame_index >= len(animation):
             self.frame_index = 0
-
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center=self.hitbox.center)
 
-    def update(self):
+    def update(self, dt):
         self.input()
         self.cooldowns()
         self.get_status()
-        self.animate()
-        self.move(self.speed)
+        self.animate(dt)
+        self.move(self.speed, self.pos, dt)

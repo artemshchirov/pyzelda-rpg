@@ -30,7 +30,7 @@ PyZelda RPG written in python based on [tutorial](https://www.youtube.com/watch?
 - [x] UI
 - [x] Magic setup
 - [x] Enemy creation
-- [ ] Player-enemy interaction
+- [x] Player-enemy interaction
 - [ ] Particles
 - [ ] Spells
 - [ ] Upgrade system and menu
