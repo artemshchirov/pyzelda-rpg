@@ -1,4 +1,5 @@
 import pygame
+from support import get_path
 
 
 class Weapon(pygame.sprite.Sprite):
@@ -7,8 +8,8 @@ class Weapon(pygame.sprite.Sprite):
         direction = player.status.split('_')[0]  # cut '_idle'
 
         # graphic
-        full_path = r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons' + \
-            f'\\{player.weapon}\\{direction}.png'
+        full_path = get_path(
+            f'../graphics/weapons/{player.weapon}/{direction}.png')
         self.image = pygame.image.load(full_path).convert_alpha()
 
         # placement

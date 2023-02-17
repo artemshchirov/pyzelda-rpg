@@ -1,4 +1,4 @@
-# Python ⚔ Like-Zelda RPG ⚔ Pygame
+# Python ⚔ PyZelda RPG ⚔ Pygame
 
 ## About project
 
@@ -9,15 +9,15 @@ The game was also made in Tiled.
 ## Run project locally
 
 ```bash
-git clone https://github.com/artemshchirov/like-zelda-rpg.git
-cd like-zelda-rpg
+git clone https://github.com/artemshchirov/pyzelda-rpg.git
+cd pyzelda-rpg
 pip install pygame
 python code/main.py
 ```
 
 ![image_2022-11-28_01-22-10](https://user-images.githubusercontent.com/78075439/204165230-b9c48243-f1b8-4906-8088-5a5233865587.png)
 
-Like-Zelda RPG written in python based on [tutorial](https://www.youtube.com/watch?v=QU1pPzEGrqw)
+PyZelda RPG written in python based on [tutorial](https://www.youtube.com/watch?v=QU1pPzEGrqw)
 
 ## TODO
 

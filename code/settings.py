@@ -1,16 +1,24 @@
+from support import get_path
+
 # game setup
 WIDTH = 1280
-HEIGTH = 720
+HEIGHT = 720
 FPS = 60
 TILESIZE = 64
 
 # weapons
+sword_path = get_path('../graphics/weapons/sword/full.png')
+lance_path = get_path('../graphics/weapons/lance/full.png')
+axe_path = get_path('../graphics/weapons/axe/full.png')
+rapier_path = get_path('../graphics/weapons/rapier/full.png')
+sai_path = get_path('../graphics/weapons/sai/full.png')
+
 weapon_data = {
-    'sword': {'cooldown': 100, 'damage': 15, 'graphic': r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons\sword\full.png'},
-    'lance': {'cooldown': 400, 'damage': 30, 'graphic': r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons\lance\full.png'},
-    'axe': {'cooldown': 300, 'damage': 20, 'graphic': r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons\axe\full.png'},
-    'rapier': {'cooldown': 50, 'damage': 8, 'graphic': r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons\rapier\full.png'},
-    'sai': {'cooldown': 80, 'damage': 10, 'graphic': r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\weapons\sai\full.png'}
+    'sword': {'cooldown': 100, 'damage': 15, 'graphic': sword_path},
+    'lance': {'cooldown': 400, 'damage': 30, 'graphic': lance_path},
+    'axe': {'cooldown': 300, 'damage': 20, 'graphic': axe_path},
+    'rapier': {'cooldown': 50, 'damage': 8, 'graphic': rapier_path},
+    'sai': {'cooldown': 80, 'damage': 10, 'graphic': sai_path}
 }
 
 # WORLD_MAP = [
