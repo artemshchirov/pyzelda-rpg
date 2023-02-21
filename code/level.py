@@ -8,7 +8,6 @@ from random import choice
 from weapon import Weapon
 
 
-
 class Level:
     def __init__(self):
         # get the display surface
@@ -23,7 +22,6 @@ class Level:
 
         # sprite setup
         self.create_map()
-
 
     def create_map(self):
         layouts = {
@@ -70,16 +68,13 @@ class Level:
         self.player = Player(
             (2000, 1430), [self.visible_sprites], self.obstacles_sprites, self.create_attack, self.destroy_attack)
 
-
     def create_attack(self):
         self.current_attack = Weapon(self.player, [self.visible_sprites])
-
 
     def destroy_attack(self):
         if self.current_attack:
             self.current_attack.kill()
-        self.current_attack = None 
-
+        self.current_attack = None
 
     def run(self):
         """Update and draw the game"""
@@ -88,11 +83,11 @@ class Level:
         debug(self.player.status, 400, 10)
 
 
-
 class YSortCameraGroup(pygame.sprite.Group):
     """
     Set camera position and implement overlap 
     """
+
     def __init__(self):
         # general setup()
         super().__init__()
@@ -107,7 +102,6 @@ class YSortCameraGroup(pygame.sprite.Group):
         self.floor_rect = self.floor_surf.get_rect(topleft=(0, 0))
 
         print(f"self.floor_stuf : {self.floor_surf}")
-
 
     def custom_draw(self, player):
         # getting the offset

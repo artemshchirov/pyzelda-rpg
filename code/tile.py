@@ -2,7 +2,6 @@ import pygame
 from settings import *
 
 
-
 class Tile(pygame.sprite.Sprite):
     def __init__(self,
                  pos: tuple,
@@ -14,7 +13,7 @@ class Tile(pygame.sprite.Sprite):
         self.sprite_type = sprite_type
         self.image = surface
         if sprite_type == 'object':
-            self.rect = self.image.get_rec(topleft = (pos[0], pos[1] - TILESIZE))
+            self.rect = self.image.get_rec(topleft=(pos[0], pos[1] - TILESIZE))
         else:
             self.rect = self.image.get_rect(topleft=pos)
         self.hitbox = self.rect.inflate(0, -10)

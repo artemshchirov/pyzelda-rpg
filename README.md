@@ -1,6 +1,12 @@
-# PYTHON ⚔ Like-Zelda RPG
+# Python ⚔ Like-Zelda RPG ⚔ Pygame
 
-## Have a look at the project
+## About project
+
+A Zelda style game in Python and Pygame.\
+This includes weapons and enemies, a magic and spells, upgrades and a sound effects.\
+The game was also made in Tiled.
+
+## Run project locally
 
 ```bash
 git clone https://github.com/artemshchirov/like-zelda-rpg.git
@@ -28,4 +34,4 @@ Like-Zelda RPG written in python based on [tutorial](https://www.youtube.com/wat
 - [ ] Particles
 - [ ] Spells
 - [ ] Upgrade system and menu
-- [ ] sound
+- [ ] Audio

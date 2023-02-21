@@ -4,12 +4,12 @@ from debug import debug
 from support import *
 
 
-
 class Player(pygame.sprite.Sprite):
     """
     Load image from folder and create pygame object for working with image movements
         and player object values
     """
+
     def __init__(self,
                  pos: tuple,
                  groups: list,
@@ -50,7 +50,6 @@ class Player(pygame.sprite.Sprite):
         self.weapon_switch_time = None
         self.switch_duration_cooldown = 200
 
-
     def import_player_assets(self):
         character_path = r'C:\Users\artem\Documents\GitHub\cyber-zelda-rpg\graphics\player'
         self.animations = {
@@ -62,7 +61,6 @@ class Player(pygame.sprite.Sprite):
         for animation in self.animations.keys():
             full_path = character_path + '\\' + animation
             self.animations[animation] = import_folder(full_path)
-
 
     def input(self):
         """
@@ -107,14 +105,13 @@ class Player(pygame.sprite.Sprite):
             if keys[pygame.K_q] and self.can_switch_weapon:
                 self.can_switch_weapon = False
                 self.weapon_switch_time = pygame.time.get_ticks()
-                
+
                 if self.weapon_index < len(list(weapon_data.keys()))-1:
                     self.weapon_index += 1
                 else:
                     self.weapon_index = 0
-                    
-                self.weapon = list(weapon_data.keys())[self.weapon_index]
 
+                self.weapon = list(weapon_data.keys())[self.weapon_index]
 
     def get_status(self):
         # idle status
@@ -133,7 +130,6 @@ class Player(pygame.sprite.Sprite):
             else:
                 if 'attack' in self.status:
                     self.status = self.status.replace('_attack', '')
-
 
     def move(self, speed):
         # magnitude is length of vector: |AB| = v--x**2--+--y**2-/.
@@ -155,7 +151,6 @@ class Player(pygame.sprite.Sprite):
         debug(f"2 vec x,y: {self.direction}", 30, 10)
         debug(f"2 len: {self.direction.magnitude()}", 75, 10)
         debug(f"2 speed: {self.direction * speed}", 120, 10)
-
 
     def collision(self, direction):
         """
@@ -180,7 +175,6 @@ class Player(pygame.sprite.Sprite):
                     if self.direction.y < 0:  # moving up
                         self.hitbox.top = sprite.hitbox.bottom
 
-
     def cooldowns(self):
         current_time = pygame.time.get_ticks()
 
@@ -193,7 +187,6 @@ class Player(pygame.sprite.Sprite):
             if current_time - self.weapon_switch_time >= self.switch_duration_cooldown:
                 self.can_switch_weapon = True
 
-
     def animate(self):
         animation = self.animations[self.status]
 
@@ -205,7 +198,6 @@ class Player(pygame.sprite.Sprite):
         # set image
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center=self.hitbox.center)
-
 
     def update(self):
         self.input()
