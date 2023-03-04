@@ -1,14 +1,10 @@
 import pygame
 from settings import *
 from support import *
+from debug import debug
 
 
 class Player(pygame.sprite.Sprite):
-    """
-    Load image from folder and create pygame object for working with image movements
-        and player object values
-    """
-
     def __init__(self, pos, groups, obstacles_sprites, create_attack, destroy_attack):
         super().__init__(groups)
         player_path = get_path('../graphics/test/player.png')
@@ -25,7 +21,6 @@ class Player(pygame.sprite.Sprite):
         # movement
         self.direction = pygame.math.Vector2()
         self.speed = 5
-
         self.attacking = False
         self.attack_cooldown = 400
         self.attack_time = None
@@ -41,6 +36,19 @@ class Player(pygame.sprite.Sprite):
         self.weapon_switch_time = None
         self.switch_duration_cooldown = 200
 
+        # stats
+        self.stats = {
+            'health': 100,
+            'energy': 60,
+            'attack': 10,
+            'magic': 4,
+            'speed': 6
+        }
+        self.health = self.stats['health'] * 0.5
+        self.energy = self.stats['energy'] * 0.8
+        self.speed = self.stats['speed']
+        self.exp = 123
+
     def import_player_assets(self):
         character_path = get_path('../graphics/player')
         self.animations = {
@@ -54,26 +62,23 @@ class Player(pygame.sprite.Sprite):
             self.animations[animation] = import_folder(full_path)
 
     def input(self):
-        """
-        Check if symbol was pressed and do action
-        """
         if not self.attacking:
             keys = pygame.key.get_pressed()
 
             # movement
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
+            if keys[pygame.K_UP] or keys[pygame.K_w]:
                 self.direction.y = -1
                 self.status = 'up'
-            elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
                 self.direction.y = 1
                 self.status = 'down'
             else:
                 self.direction.y = 0
 
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 self.direction.x = 1
                 self.status = 'right'
-            elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 self.direction.x = -1
                 self.status = 'left'
             else:
@@ -129,10 +134,6 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = self.hitbox.center
 
     def collision(self, direction):
-        """
-        Check collision between player sprite and other sprites
-            and stop character if true  
-        """
         if direction == 'vertical':
             for sprite in self.obstacles_sprites:
                 if sprite.hitbox.colliderect(self.hitbox):

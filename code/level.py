@@ -5,23 +5,28 @@ from player import Player
 from support import *
 from random import choice
 from weapon import Weapon
+from ui import UI
 
 
 class Level:
     def __init__(self):
+        # get the display surface
         self.display_surface = pygame.display.get_surface()
 
-        # setup
+        # sprite group setup
         self.visible_sprites = YSortCameraGroup()
         self.obstacles_sprites = pygame.sprite.Group()
 
-        # attack
+        # attack sprites
         self.current_attack = None
 
+        # sprite setup
         self.create_map()
 
-    def create_map(self):
+        # user interface
+        self.ui = UI()
 
+    def create_map(self):
         boundary_map_path = get_path('../data/map/map_FloorBlocks.csv')
         grass_map_path = get_path('../data/map/map_Grass.csv')
         object_map_path = get_path('../data/map/map_Objects.csv')
@@ -59,7 +64,7 @@ class Level:
                                  'grass',
                                  random_grass_image)
 
-                        if style == 'objects':
+                        if style == 'object':
                             surf = graphics['objects'][int(col)]
                             Tile((x, y),
                                  [self.visible_sprites, self.obstacles_sprites],
@@ -67,7 +72,7 @@ class Level:
                                  surf)
 
         self.player = Player(
-            (2000, 1430), [self.visible_sprites], self.obstacles_sprites, self.create_attack, self.destroy_attack)
+            (2000, 1400), [self.visible_sprites], self.obstacles_sprites, self.create_attack, self.destroy_attack)
 
     def create_attack(self):
         self.current_attack = Weapon(self.player, [self.visible_sprites])
@@ -78,18 +83,15 @@ class Level:
         self.current_attack = None
 
     def run(self):
-        """Update and draw the game"""
         self.visible_sprites.custom_draw(self.player)
         self.visible_sprites.update()
+        self.ui.display(self.player)
 
 
 class YSortCameraGroup(pygame.sprite.Group):
-    """
-    Set camera position and implement overlap 
-    """
-
     def __init__(self):
         super().__init__()
+        # general setup
         self.display_surface = pygame.display.get_surface()
         self.half_width = self.display_surface.get_size()[0] // 2
         self.half_height = self.display_surface.get_size()[1] // 2
@@ -101,6 +103,7 @@ class YSortCameraGroup(pygame.sprite.Group):
         self.floor_rect = self.floor_surf.get_rect(topleft=(0, 0))
 
     def custom_draw(self, player):
+        # getting the offset
         self.offset.x = player.rect.centerx - self.half_width
         self.offset.y = player.rect.centery - self.half_height
 
