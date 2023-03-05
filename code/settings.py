@@ -6,7 +6,6 @@ HEIGHT = 720
 FPS = 60
 TILESIZE = 64
 
-
 # ui
 BAR_HEIGHT = 20
 HEALTH_BAR_WIDTH = 200
@@ -34,9 +33,18 @@ rapier_path = get_path('../graphics/weapons/rapier/full.png')
 sai_path = get_path('../graphics/weapons/sai/full.png')
 
 weapon_data = {
-    'sword': {'cooldown': 100, 'damage': 15, 'graphics': sword_path},
-    'lance': {'cooldown': 400, 'damage': 30, 'graphics': lance_path},
-    'axe': {'cooldown': 300, 'damage': 20, 'graphics': axe_path},
-    'rapier': {'cooldown': 50, 'damage': 8, 'graphics': rapier_path},
-    'sai': {'cooldown': 80, 'damage': 10, 'graphics': sai_path}
+    'sword': {'cooldown': 100, 'damage': 15, 'graphic': sword_path},
+    'lance': {'cooldown': 400, 'damage': 30, 'graphic': lance_path},
+    'axe': {'cooldown': 300, 'damage': 20, 'graphic': axe_path},
+    'rapier': {'cooldown': 50, 'damage': 8, 'graphic': rapier_path},
+    'sai': {'cooldown': 80, 'damage': 10, 'graphic': sai_path}
+}
+
+# magic
+flame_path = get_path('../graphics/particles/flame/fire.png')
+heal_path = get_path('../graphics/particles/heal/heal.png')
+
+magic_data = {
+    'flame': {'strength': 5, 'cost': 20, 'graphic': flame_path},
+    'heal': {'strength': 20, 'cost': 10, 'graphic': heal_path},
 }

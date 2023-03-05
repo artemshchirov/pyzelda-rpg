@@ -27,8 +27,8 @@ PyZelda RPG written in python based on [tutorial](https://www.youtube.com/watch?
 - [x] Graphics
 - [x] Player animations
 - [x] Weapons
-- [ ] UI
-- [ ] Magic setup
+- [x] UI
+- [x] Magic setup
 - [ ] Enemy creation
 - [ ] Player-enemy interaction
 - [ ] Particles
