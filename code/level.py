@@ -6,6 +6,7 @@ from support import *
 from random import choice
 from weapon import Weapon
 from ui import UI
+from enemy import Enemy
 
 
 class Level:
@@ -15,7 +16,7 @@ class Level:
 
         # sprite group setup
         self.visible_sprites = YSortCameraGroup()
-        self.obstacles_sprites = pygame.sprite.Group()
+        self.obstacle_sprites = pygame.sprite.Group()
 
         # attack sprites
         self.current_attack = None
@@ -27,22 +28,24 @@ class Level:
         self.ui = UI()
 
     def create_map(self):
-        boundary_map_path = get_path('../data/map/map_FloorBlocks.csv')
-        grass_map_path = get_path('../data/map/map_Grass.csv')
-        object_map_path = get_path('../data/map/map_Objects.csv')
+        boundary_csv_path = get_path('../data/map/map_FloorBlocks.csv')
+        grass_csv_path = get_path('../data/map/map_Grass.csv')
+        object_csv_path = get_path('../data/map/map_Objects.csv')
+        entities_csv_path = get_path('../data/map/map_Entities.csv')
 
-        grass_path = get_path('../graphics/grass')
-        objects_path = get_path('../graphics/objects')
+        grass_graphics_path = get_path('../graphics/grass')
+        objects_graphics_path = get_path('../graphics/objects')
 
         layouts = {
-            'boundary': import_csv_layout(boundary_map_path),
-            'grass': import_csv_layout(grass_map_path),
-            'object': import_csv_layout(object_map_path),
+            'boundary': import_csv_layout(boundary_csv_path),
+            'grass': import_csv_layout(grass_csv_path),
+            'object': import_csv_layout(object_csv_path),
+            'entities': import_csv_layout(entities_csv_path),
         }
 
         graphics = {
-            'grass': import_folder(grass_path),
-            'objects': import_folder(objects_path),
+            'grass': import_folder(grass_graphics_path),
+            'objects': import_folder(objects_graphics_path),
         }
 
         for style, layout in layouts.items():
@@ -54,36 +57,52 @@ class Level:
 
                         if style == 'boundary':
                             Tile((x, y),
-                                 [self.obstacles_sprites],
+                                 [self.obstacle_sprites],
                                  'invisible')
 
                         if style == 'grass':
                             random_grass_image = choice(graphics['grass'])
                             Tile((x, y),
-                                 [self.visible_sprites, self.obstacles_sprites],
+                                 [self.visible_sprites, self.obstacle_sprites],
                                  'grass',
                                  random_grass_image)
 
                         if style == 'object':
                             surf = graphics['objects'][int(col)]
                             Tile((x, y),
-                                 [self.visible_sprites, self.obstacles_sprites],
+                                 [self.visible_sprites, self.obstacle_sprites],
                                  'object',
                                  surf)
 
-        self.player = Player(
-            (2000, 1400),
-            [self.visible_sprites],
-            self.obstacles_sprites,
-            self.create_attack,
-            self.destroy_attack,
-            self.create_magic)
+                        if style == 'entities':
+                            if col == '394':
+                                self.player = Player(
+                                    (x, y),
+                                    [self.visible_sprites],
+                                    self.obstacle_sprites,
+                                    self.create_attack,
+                                    self.destroy_attack,
+                                    self.create_magic)
+                            else:
+                                if col == '390':
+                                    monster_name = 'bamboo'
+                                elif col == '391':
+                                    monster_name = 'spirit'
+                                elif col == '392':
+                                    monster_name = 'raccoon'
+                                    # TODO do an offset for bigger than standard 64x64 tiles
+                                    # y -= TILESIZE
+                                else:
+                                    monster_name = 'squid'
+
+                                Enemy(monster_name, (x, y), [
+                                      self.visible_sprites], self.obstacle_sprites)
 
     def create_attack(self):
         self.current_attack = Weapon(self.player, [self.visible_sprites])
 
     def create_magic(self, style, strength, cost):
-        print(style, strength, cost)
+        pass
 
     def destroy_attack(self):
         if self.current_attack:
@@ -93,6 +112,7 @@ class Level:
     def run(self):
         self.visible_sprites.custom_draw(self.player)
         self.visible_sprites.update()
+        self.visible_sprites.enemy_update(self.player)
         self.ui.display(self.player)
 
 
@@ -122,3 +142,10 @@ class YSortCameraGroup(pygame.sprite.Group):
         for sprite in sorted(self.sprites(), key=lambda sprite: sprite.rect.centery):
             offset_rect = sprite.rect.topleft - self.offset
             self.display_surface.blit(sprite.image, offset_rect)
+
+    def enemy_update(self, player):
+        enemy_sprites = [sprite for sprite in self.sprites() if hasattr(
+            sprite, 'sprite_type') and sprite.sprite_type == 'enemy']
+
+        for enemy in enemy_sprites:
+            enemy.enemy_update(player)
