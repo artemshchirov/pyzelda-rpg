@@ -3,7 +3,6 @@ import sys
 import time
 from settings import *
 from level import Level
-from debug import debug
 
 
 class Game:
@@ -27,7 +26,6 @@ class Game:
 
             self.screen.fill('black')
             self.level.run(dt)
-            debug(round(dt, 4), 60, 10)
             pygame.display.update()
             self.clock.tick(FPS)
 

@@ -53,6 +53,11 @@ class Player(Entity):
         self.speed = self.stats['speed']
         self.exp = 123
 
+        # damage timer
+        self.vulnerable = True
+        self.hurt_time = None
+        self.invulnerability_duration = 500
+
     def import_player_assets(self):
         character_path = get_path('../graphics/player')
         self.animations = {
@@ -93,6 +98,8 @@ class Player(Entity):
                 self.attacking = True
                 self.attack_time = pygame.time.get_ticks()
                 self.create_attack()
+                self.direction.x = 0
+                self.direction.y = 0
 
             # magic
             if keys[pygame.K_LCTRL]:
@@ -148,7 +155,7 @@ class Player(Entity):
         current_time = pygame.time.get_ticks()
 
         if self.attacking:
-            if current_time - self.attack_time >= self.attack_cooldown:
+            if current_time - self.attack_time >= self.attack_cooldown + weapon_data[self.weapon]['cooldown']:
                 self.attacking = False
                 self.destroy_attack()
 
@@ -160,6 +167,10 @@ class Player(Entity):
             if current_time - self.magic_switch_time >= self.switch_duration_cooldown:
                 self.can_switch_magic = True
 
+        if not self.vulnerable:
+            if current_time - self.hurt_time >= self.invulnerability_duration:
+                self.vulnerable = True
+
     def animate(self, dt):
         animation = self.animations[self.status]
 
@@ -168,6 +179,20 @@ class Player(Entity):
             self.frame_index = 0
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center=self.hitbox.center)
+
+        current_time = pygame.time.get_ticks()
+        # flicker
+        if not self.vulnerable:
+            if current_time - self.hurt_time:
+                alpha = self.wave_value()
+                self.image.set_alpha(alpha)
+            else:
+                self.image.set_alpha(255)
+
+    def get_full_weapon_damage(self):
+        base_damage = self.stats['attack']
+        weapon_damage = weapon_data[self.weapon]['damage']
+        return base_damage + weapon_damage
 
     def update(self, dt):
         self.input()
