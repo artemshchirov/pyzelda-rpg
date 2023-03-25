@@ -2,11 +2,12 @@ import pygame
 from settings import *
 from tile import Tile
 from player import Player
-from support import *
-from random import choice
+from support import get_path, import_csv_layout, import_folder
+from random import choice, randint
 from weapon import Weapon
 from ui import UI
 from enemy import Enemy
+from particles import AnimationPlayer
 
 
 class Level:
@@ -29,25 +30,20 @@ class Level:
         # user interface
         self.ui = UI()
 
+        # particles
+        self.animation_player = AnimationPlayer()
+
     def create_map(self):
-        boundary_csv_path = get_path('../data/map/map_FloorBlocks.csv')
-        grass_csv_path = get_path('../data/map/map_Grass.csv')
-        object_csv_path = get_path('../data/map/map_Objects.csv')
-        entities_csv_path = get_path('../data/map/map_Entities.csv')
-
-        grass_graphics_path = get_path('../graphics/grass')
-        objects_graphics_path = get_path('../graphics/objects')
-
         layouts = {
-            'boundary': import_csv_layout(boundary_csv_path),
-            'grass': import_csv_layout(grass_csv_path),
-            'object': import_csv_layout(object_csv_path),
-            'entities': import_csv_layout(entities_csv_path),
+            'boundary': import_csv_layout('../data/map/map_FloorBlocks.csv'),
+            'grass': import_csv_layout('../data/map/map_Grass.csv'),
+            'object': import_csv_layout('../data/map/map_Objects.csv'),
+            'entities': import_csv_layout('../data/map/map_Entities.csv'),
         }
 
         graphics = {
-            'grass': import_folder(grass_graphics_path),
-            'objects': import_folder(objects_graphics_path),
+            'grass': import_folder('../graphics/grass'),
+            'objects': import_folder('../graphics/objects'),
         }
 
         for style, layout in layouts.items():
@@ -101,7 +97,7 @@ class Level:
                                     monster_name,
                                     (x, y),
                                     [self.visible_sprites, self.attackable_sprites],
-                                    self.obstacle_sprites, self.damage_player)
+                                    self.obstacle_sprites, self.damage_player, self.trigger_death_particles)
 
     def create_attack(self):
         self.current_attack = Weapon(
@@ -123,6 +119,11 @@ class Level:
                 if collision_sprites:
                     for target_sprite in collision_sprites:
                         if target_sprite.sprite_type == 'grass':
+                            pos = target_sprite.rect.center
+                            offset = pygame.math.Vector2(0, 75)
+                            for leaf in range(randint(3, 6)):
+                                self.animation_player.create_grass_particles(
+                                    pos - offset, [self.visible_sprites])
                             target_sprite.kill()
                         else:
                             target_sprite.get_damage(
@@ -133,6 +134,12 @@ class Level:
             self.player.health -= amount
             self.player.vulnerable = False
             self.player.hurt_time = pygame.time.get_ticks()
+            self.animation_player.create_particle(
+                attack_type, self.player.rect.center, [self.visible_sprites])
+
+    def trigger_death_particles(self, pos, particle_type):
+        self.animation_player.create_particle(
+            particle_type, pos, self.visible_sprites)
 
     def run(self, dt):
         self.visible_sprites.custom_draw(self.player)

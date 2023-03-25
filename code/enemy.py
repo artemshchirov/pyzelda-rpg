@@ -1,11 +1,11 @@
 import pygame
 from settings import *
-from support import *
+from support import import_folder
 from entity import Entity
 
 
 class Enemy(Entity):
-    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player):
+    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player, trigger_death_particles):
         super().__init__(groups, pos)
         # general setup
         self.sprite_type = 'enemy'
@@ -38,6 +38,7 @@ class Enemy(Entity):
         self.attack_time = None
         self.attack_cooldown = 400
         self.damage_player = damage_player
+        self.trigger_death_particles = trigger_death_particles
 
         # invisibility timer
         self.vulnerable = True
@@ -46,9 +47,9 @@ class Enemy(Entity):
 
     def import_graphics(self, name):
         self.animations = {'idle': [], 'move': [], 'attack': []}
-        main_path = get_path(f'../graphics/monsters/{name}/')
         for animation in self.animations.keys():
-            self.animations[animation] = import_folder(main_path + animation)
+            self.animations[animation] = import_folder(
+                f'../graphics/monsters/{name}/' + animation)
 
     def get_player_distance_direction(self, player):
         enemy_vec = pygame.math.Vector2(self.rect.center)
@@ -124,6 +125,7 @@ class Enemy(Entity):
     def check_death(self):
         if self.health <= 0:
             self.kill()
+            self.trigger_death_particles(self.rect.center, self.monster_name)
 
     def hit_reaction(self):
         if not self.vulnerable:

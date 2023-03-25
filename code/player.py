@@ -1,6 +1,6 @@
 import pygame
 from settings import *
-from support import *
+from support import get_path, import_folder
 from entity import Entity
 
 
@@ -183,11 +183,10 @@ class Player(Entity):
         current_time = pygame.time.get_ticks()
         # flicker
         if not self.vulnerable:
-            if current_time - self.hurt_time:
-                alpha = self.wave_value()
-                self.image.set_alpha(alpha)
-            else:
-                self.image.set_alpha(255)
+            alpha = self.wave_value()
+            self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255)
 
     def get_full_weapon_damage(self):
         base_damage = self.stats['attack']
