@@ -45,7 +45,7 @@ class Player(Entity):
             'health': 100,
             'energy': 60,
             'attack': 10,
-            'magic': 4,
+            'magic': 3,
             'speed': 300
         }
         self.health = self.stats['health'] * 0.5
@@ -193,9 +193,16 @@ class Player(Entity):
         weapon_damage = weapon_data[self.weapon]['damage']
         return base_damage + weapon_damage
 
+    def energy_recovery(self, dt):
+        if self.energy < self.stats['energy']:
+            self.energy += self.stats['magic'] * dt
+        else:
+            self.energy = self.stats['energy']
+
     def update(self, dt):
         self.input()
         self.cooldowns()
         self.get_status()
         self.animate(dt)
         self.move(self.speed, self.pos, dt)
+        self.energy_recovery(dt)
