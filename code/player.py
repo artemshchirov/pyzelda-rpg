@@ -10,7 +10,7 @@ class Player(Entity):
         player_path = get_path('../graphics/test/player.png')
         self.image = pygame.image.load(player_path).convert_alpha()
         self.rect = self.image.get_rect(topleft=pos)
-        self.hitbox = self.rect.inflate(0, -26)
+        self.hitbox = self.rect.inflate(-6, HITBOX_OFFSET['player'])
 
         # graphics
         self.import_player_assets()
@@ -62,8 +62,8 @@ class Player(Entity):
             'magic': 100,
             'speed': 100
         }
-        self.health = self.stats['health'] * 0.5
-        self.energy = self.stats['energy'] * 0.8
+        self.health = self.stats['health']
+        self.energy = self.stats['energy']
         self.speed = self.stats['speed']
         self.exp = 0
 
@@ -71,6 +71,11 @@ class Player(Entity):
         self.vulnerable = True
         self.hurt_time = None
         self.invulnerability_duration = 500
+
+        # sound
+        self.weapon_attack_sound = pygame.mixer.Sound(
+            get_path('../audio/sword.wav'))
+        self.weapon_attack_sound.set_volume(0.2)
 
     def import_player_assets(self):
         character_path = get_path('../graphics/player')
@@ -112,6 +117,7 @@ class Player(Entity):
                 self.attacking = True
                 self.attack_time = pygame.time.get_ticks()
                 self.create_attack()
+                self.weapon_attack_sound.play()
                 self.direction.x = 0
                 self.direction.y = 0
 

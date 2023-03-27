@@ -5,6 +5,12 @@ WIDTH = 1280
 HEIGHT = 720
 FPS = 120
 TILESIZE = 64
+HITBOX_OFFSET = {
+    'player': -26,
+    'object': -40,
+    'grass': -10,
+    'invisible': 0
+}
 
 # ui
 BAR_HEIGHT = 20
@@ -50,9 +56,12 @@ weapon_data = {
 flame_path = get_path('../graphics/particles/flame/fire.png')
 heal_path = get_path('../graphics/particles/heal/heal.png')
 
+flame_sound_path = get_path('../audio/flame.wav')
+heal_sound_path = get_path('../audio/heal.wav')
+
 magic_data = {
-    'flame': {'strength': 5, 'cost': 20, 'graphic': flame_path},
-    'heal': {'strength': 20, 'cost': 10, 'graphic': heal_path},
+    'flame': {'strength': 5, 'cost': 20, 'graphic': flame_path, 'spell_sound': flame_sound_path},
+    'heal': {'strength': 20, 'cost': 10, 'graphic': heal_path, 'spell_sound': heal_sound_path},
 }
 
 # enemy

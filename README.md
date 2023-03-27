@@ -31,7 +31,14 @@ PyZelda RPG written in python based on [tutorial](https://www.youtube.com/watch?
 - [x] Magic setup
 - [x] Enemy creation
 - [x] Player-enemy interaction
-- [ ] Particles
-- [ ] Spells
-- [ ] Upgrade system and menu
-- [ ] Audio
+- [x] Particles
+- [x] Spells
+- [x] Upgrade system and menu
+- [x] Audio
+
+---
+
+- [ ] Over world
+- [ ] Enemy pathfinder
+- [ ] Save / Load game
+- [ ] Exp animation
