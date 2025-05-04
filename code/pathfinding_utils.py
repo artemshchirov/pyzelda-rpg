@@ -11,6 +11,12 @@ def astar(grid, start, goal):
     Returns: list of (x, y) tuples from start to goal (inclusive), or [] if no path
     """
     neighbors = [(0,1),(1,0),(-1,0),(0,-1)]
+    # Early exit if start or goal is blocked
+    if not (0 <= start[0] < len(grid[0]) and 0 <= start[1] < len(grid)) or not (0 <= goal[0] < len(grid[0]) and 0 <= goal[1] < len(grid)):
+        return []
+    if grid[start[1]][start[0]] == 1 or grid[goal[1]][goal[0]] == 1:
+        return []
+
     close_set = set()
     came_from = {}
     gscore = {start:0}
@@ -37,7 +43,7 @@ def astar(grid, start, goal):
                     continue
             else:
                 continue
-            if neighbor in close_set and tentative_g_score >= gscore.get(neighbor, 0):
+            if neighbor in close_set and tentative_g_score >= gscore.get(neighbor, float('inf')):
                 continue
             if tentative_g_score < gscore.get(neighbor, float('inf')):
                 came_from[neighbor] = current

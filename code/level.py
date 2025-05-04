@@ -71,6 +71,10 @@ class Level:
             'objects': import_folder('../graphics/objects'),
         }
 
+        # Build pathfinding grid after all obstacles are placed
+        from pathfinding_utils import build_grid
+        self.pathfinding_grid = None
+
         for style, layout in layouts.items():
             for row_idx, row in enumerate(layout):
                 for col_idx, col in enumerate(row):
@@ -105,40 +109,50 @@ class Level:
                                  'object',
                                  surf)
 
-                        if style == 'entities':
-                            if col == '394':
-                                self.player = Player(
-                                    (x, y),
-                                    [self.visible_sprites],
-                                    self.obstacle_sprites,
-                                    self.create_attack,
-                                    self.destroy_attack,
-                                    self.create_magic)
-                                if loaded_data and 'player' in loaded_data:
-                                    self.player.from_dict(loaded_data['player'])
-                            else:
-                                defeated = False
-                                if loaded_data and 'defeated_enemies' in loaded_data:
-                                    for e in loaded_data['defeated_enemies']:
-                                        if e['x'] == x and e['y'] == y:
-                                            defeated = True
-                                            break
-                                if not defeated:
-                                    if col == '390':
-                                        monster_name = 'bamboo'
-                                    elif col == '391':
-                                        monster_name = 'spirit'
-                                    elif col == '392':
-                                        monster_name = 'raccoon'
-                                    else:
-                                        monster_name = 'squid'
+        # Now build the pathfinding grid
+        self.pathfinding_grid = build_grid(WIDTH, HEIGHT, TILESIZE, self.obstacle_sprites)
 
-                                    Enemy(
-                                        monster_name,
-                                        (x, y),
-                                        [self.visible_sprites, self.attackable_sprites],
-                                        self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
-                                        self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount))
+        # Place entities (player and enemies) after grid is built
+        entities_layout = layouts['entities']
+        for row_idx, row in enumerate(entities_layout):
+            for col_idx, col in enumerate(row):
+                if col != '-1':
+                    x = col_idx * TILESIZE
+                    y = row_idx * TILESIZE
+                    if col == '394':
+                        self.player = Player(
+                            (x, y),
+                            [self.visible_sprites],
+                            self.obstacle_sprites,
+                            self.create_attack,
+                            self.destroy_attack,
+                            self.create_magic)
+                        if loaded_data and 'player' in loaded_data:
+                            self.player.from_dict(loaded_data['player'])
+                    else:
+                        defeated = False
+                        if loaded_data and 'defeated_enemies' in loaded_data:
+                            for e in loaded_data['defeated_enemies']:
+                                if e['x'] == x and e['y'] == y:
+                                    defeated = True
+                                    break
+                        if not defeated:
+                            if col == '390':
+                                monster_name = 'bamboo'
+                            elif col == '391':
+                                monster_name = 'spirit'
+                            elif col == '392':
+                                monster_name = 'raccoon'
+                            else:
+                                monster_name = 'squid'
+
+                            Enemy(
+                                monster_name,
+                                (x, y),
+                                [self.visible_sprites, self.attackable_sprites],
+                                self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
+                                self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount),
+                                self.pathfinding_grid, TILESIZE)
 
     def create_attack(self):
         self.current_attack = Weapon(
