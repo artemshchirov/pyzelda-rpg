@@ -5,7 +5,7 @@ from entity import Entity
 
 
 class Enemy(Entity):
-    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player, trigger_death_particles, add_exp):
+    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player, trigger_death_particles, add_exp, trigger_exp_particles=None):
         super().__init__(groups, pos)
         # general setup
         self.sprite_type = 'enemy'
@@ -31,6 +31,10 @@ class Enemy(Entity):
         self.resistance = monster_info['resistance']
         self.attack_radius = monster_info['attack_radius']
         self.notice_radius = monster_info['notice_radius']
+
+        # exp orb callback
+        self.trigger_exp_particles = trigger_exp_particles
+        self.last_player_pos = None
         self.attack_type = monster_info['attack_type']
 
         # player interaction
@@ -138,6 +142,8 @@ class Enemy(Entity):
             self.kill()
             self.trigger_death_particles(self.rect.center, self.monster_name)
             self.add_exp(self.exp)
+            if self.trigger_exp_particles and self.last_player_pos:
+                self.trigger_exp_particles(self.rect.center, self.last_player_pos, self.exp)
             self.death_sound.play()
 
     def hit_reaction(self):
@@ -154,3 +160,5 @@ class Enemy(Entity):
     def enemy_update(self, player):
         self.get_status(player)
         self.actions(player)
+        # Store last player position for exp orb targeting
+        self.last_player_pos = player.rect.center

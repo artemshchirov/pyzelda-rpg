@@ -53,6 +53,11 @@ class Level:
         self.animation_player = AnimationPlayer()
         self.magic_player = MagicPlayer(self.animation_player)
 
+    def trigger_exp_particles(self, enemy_pos, player_pos, exp_amount=0):
+        # Use sparkle as placeholder if exp_orb graphics are missing
+        animation_type = 'exp_orb' if 'exp_orb' in self.animation_player.frames else 'sparkle'
+        self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
+
     def create_map(self, loaded_data=None):
         layouts = {
             'boundary': import_csv_layout('../data/map/map_FloorBlocks.csv'),
@@ -133,7 +138,7 @@ class Level:
                                         (x, y),
                                         [self.visible_sprites, self.attackable_sprites],
                                         self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
-                                        self.add_exp)
+                                        self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount))
 
     def create_attack(self):
         self.current_attack = Weapon(
