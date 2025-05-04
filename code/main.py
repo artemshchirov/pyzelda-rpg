@@ -10,10 +10,15 @@ class Game:
     def __init__(self):
         import os
         from save_manager import load_game
+        from player import Player
         pygame.init()
         pygame.display.set_caption('PyZelda RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
+
+        # Map system
+        self.current_map_id = 'default'  # can be changed for other maps
+        self.player = None
 
         # Check for save file
         save_path = 'savegame.json'
@@ -23,7 +28,17 @@ class Game:
         if os.path.exists(save_path):
             self.show_save_dialog = True
             self.save_dialog_result = None
-        self.level = Level(loaded_data=loaded_data)
+
+        # Create player and level
+        if loaded_data and 'player' in loaded_data:
+            # If loading, player will be created by Level and then extracted
+            self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data)
+            self.player = self.level.player
+        else:
+            # New game
+            self.player = None  # Will be created by Level
+            self.level = Level(self.current_map_id, player=self.player, loaded_data=None)
+            self.player = self.level.player
 
         # sound
         main_sound = pygame.mixer.Sound(get_path('../audio/main.ogg'))
@@ -95,9 +110,11 @@ class Game:
                 if self.save_dialog_result:
                     if self.save_dialog_result == 'c':
                         loaded_data = load_game('savegame.json')
-                        self.level = Level(loaded_data=loaded_data)
+                        self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data)
+                        self.player = self.level.player
                     elif self.save_dialog_result == 'n':
-                        self.level = Level(loaded_data=None)
+                        self.level = Level(self.current_map_id, player=None, loaded_data=None)
+                        self.player = self.level.player
                     self.show_save_dialog = False
                 self.clock.tick(FPS)
                 continue
