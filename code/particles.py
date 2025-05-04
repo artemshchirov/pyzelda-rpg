@@ -67,13 +67,20 @@ class AnimationPlayer:
         Spawn several exp orb particles at pos, moving towards target_pos.
         """
         from random import uniform
+        # Fallback to sparkle if exp_orb frames are missing or empty
+        orb_frames = self.frames.get('exp_orb', [])
+        if not orb_frames:
+            orb_frames = self.frames.get('sparkle', [])
+        if not orb_frames:
+            # If still empty, do nothing
+            return
         for _ in range(amount):
             # Add a small random offset to spawn position for spread
             offset = pygame.math.Vector2(uniform(-10, 10), uniform(-10, 10))
             spawn_pos = (pos[0] + offset.x, pos[1] + offset.y)
             MovingParticleEffect(
                 spawn_pos,
-                self.frames['exp_orb'],
+                orb_frames,
                 groups,
                 target_pos=target_pos,
                 speed=speed,
