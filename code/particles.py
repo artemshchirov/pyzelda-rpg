@@ -4,11 +4,19 @@ from random import choice
 
 
 class AnimationPlayer:
+    def reflect_images(self, frames):
+        new_frames = []
+        for frame in frames:
+            flipped_frame = pygame.transform.flip(frame, True, False)
+            new_frames.append(flipped_frame)
+        return new_frames
+
     def create_floating_text(self, text, pos, groups, color=(255, 255, 0), font_size=18, duration=1.2, rise_distance=30):
         """
         Spawn floating text at pos that rises and fades out.
         """
         FloatingText(text, pos, groups, color, font_size, duration, rise_distance)
+
     def __init__(self):
         self.frames = {
             # magic
