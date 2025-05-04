@@ -5,6 +5,33 @@ from entity import Entity
 
 
 class Player(Entity):
+    def to_dict(self):
+        return {
+            'pos': {'x': self.pos.x, 'y': self.pos.y},
+            'health': self.health,
+            'energy': self.energy,
+            'exp': self.exp,
+            'stats': dict(self.stats),
+            'max_stats': dict(self.max_stats),
+            'upgrade_cost': dict(self.upgrade_cost),
+            'weapon_index': self.weapon_index,
+            'magic_index': self.magic_index
+        }
+
+    def from_dict(self, data):
+        self.pos.x = data['pos']['x']
+        self.pos.y = data['pos']['y']
+        self.rect.center = (self.pos.x, self.pos.y)
+        self.health = data['health']
+        self.energy = data['energy']
+        self.exp = data['exp']
+        self.stats = dict(data['stats'])
+        self.max_stats = dict(data['max_stats'])
+        self.upgrade_cost = dict(data['upgrade_cost'])
+        self.weapon_index = data['weapon_index']
+        self.weapon = list(weapon_data.keys())[self.weapon_index]
+        self.magic_index = data['magic_index']
+        self.magic = list(magic_data.keys())[self.magic_index]
     def __init__(self, pos, groups, obstacle_sprites, create_attack, destroy_attack, create_magic):
         super().__init__(groups, pos)
         player_path = get_path('../graphics/test/player.png')
