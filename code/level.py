@@ -28,7 +28,7 @@ class Level:
             'defeated_enemies': defeated_enemies,
             'destroyed_grass': destroyed_grass
         }
-    def __init__(self, loaded_data=None):
+    def __init__(self, map_id, player=None, loaded_data=None, player_spawn_pos=None):
         # general setup
         self.display_surface = pygame.display.get_surface()
         self.game_paused = False
@@ -42,8 +42,12 @@ class Level:
         self.attack_sprites = pygame.sprite.Group()
         self.attackable_sprites = pygame.sprite.Group()
 
+        # player setup
+        self.player = player
+        self._player_spawn_pos = player_spawn_pos
+
         # sprite setup
-        self.create_map(loaded_data)
+        self.create_map(map_id, loaded_data)
 
         # user interface
         self.ui = UI()
@@ -58,12 +62,21 @@ class Level:
         animation_type = 'exp_orb' if 'exp_orb' in self.animation_player.frames else 'sparkle'
         self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
 
-    def create_map(self, loaded_data=None):
+    def create_map(self, map_id, loaded_data=None):
+        # Map file naming convention: map_<map_id>_<layer>.csv
+        def map_file(layer):
+            return f"../data/map/map_{map_id}_{layer}.csv"
+
+        # Fallback to default if not found
+        import os
+        def file_or_default(path, default):
+            return path if os.path.exists(path) else default
+
         layouts = {
-            'boundary': import_csv_layout('../data/map/map_FloorBlocks.csv'),
-            'grass': import_csv_layout('../data/map/map_Grass.csv'),
-            'object': import_csv_layout('../data/map/map_Objects.csv'),
-            'entities': import_csv_layout('../data/map/map_Entities.csv'),
+            'boundary': import_csv_layout(file_or_default(map_file('FloorBlocks'), '../data/map/map_FloorBlocks.csv')),
+            'grass': import_csv_layout(file_or_default(map_file('Grass'), '../data/map/map_Grass.csv')),
+            'object': import_csv_layout(file_or_default(map_file('Objects'), '../data/map/map_Objects.csv')),
+            'entities': import_csv_layout(file_or_default(map_file('Entities'), '../data/map/map_Entities.csv')),
         }
 
         graphics = {
@@ -120,15 +133,30 @@ class Level:
                     x = col_idx * TILESIZE
                     y = row_idx * TILESIZE
                     if col == '394':
-                        self.player = Player(
-                            (x, y),
-                            [self.visible_sprites],
-                            self.obstacle_sprites,
-                            self.create_attack,
-                            self.destroy_attack,
-                            self.create_magic)
-                        if loaded_data and 'player' in loaded_data:
-                            self.player.from_dict(loaded_data['player'])
+                        if self.player is None:
+                            # Create new player if not provided
+                            spawn_pos = (x, y)
+                            if self._player_spawn_pos is not None:
+                                spawn_pos = self._player_spawn_pos
+                            self.player = Player(
+                                spawn_pos,
+                                [self.visible_sprites],
+                                self.obstacle_sprites,
+                                self.create_attack,
+                                self.destroy_attack,
+                                self.create_magic)
+                            if loaded_data and 'player' in loaded_data:
+                                self.player.from_dict(loaded_data['player'])
+                        else:
+                            # Move provided player to spawn
+                            if self._player_spawn_pos is not None:
+                                self.player.pos.x, self.player.pos.y = self._player_spawn_pos
+                                self.player.rect.center = self._player_spawn_pos
+                            self.player.obstacle_sprites = self.obstacle_sprites
+                            self.player.create_attack = self.create_attack
+                            self.player.destroy_attack = self.destroy_attack
+                            self.player.create_magic = self.create_magic
+                            self.visible_sprites.add(self.player)
                     else:
                         defeated = False
                         if loaded_data and 'defeated_enemies' in loaded_data:
