@@ -77,6 +77,8 @@ class Level:
             '9000': {'target_map_id': 'test', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
             # From test map back to main map (place 9001 in test map)
             '9001': {'target_map_id': 'default', 'target_spawn': (27*TILESIZE, 6*TILESIZE)},
+            # From test map to island (place 9002 in test map)
+            '9002': {'target_map_id': 'island', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
         }
         # Map file naming convention: map_<map_id>_<layer>.csv
         def map_file(layer):
