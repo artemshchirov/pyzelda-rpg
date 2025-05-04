@@ -93,7 +93,6 @@ class FloatingText(pygame.sprite.Sprite):
         self.image.set_alpha(self.alpha)
         if self.elapsed >= self.duration:
             self.kill()
-        }
 
     def reflect_images(self, frames):
         new_frames = []
