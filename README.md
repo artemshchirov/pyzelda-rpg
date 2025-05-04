@@ -35,10 +35,10 @@ PyZelda RPG written in python based on [tutorial](https://www.youtube.com/watch?
 - [x] Spells
 - [x] Upgrade system and menu
 - [x] Audio
+- [x] Save / Load game
+- [x] Exp animation
 
 ---
 
 - [ ] Over world
 - [ ] Enemy pathfinder
-- [ ] Save / Load game
-- [ ] Exp animation
