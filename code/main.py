@@ -32,8 +32,10 @@ class Game:
         main_sound.play(loops=-1)
 
     def run(self):
+        import pygame
+        from save_manager import save_game
         last_time = time.time()
-        while (True):
+        while True:
             dt = time.time() - last_time
             last_time = time.time()
 
@@ -45,6 +47,10 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_m:
                         self.level.toggle_menu()
+                    # Save game when paused and P is pressed
+                    if event.key == pygame.K_p and getattr(self.level, 'game_paused', False):
+                        save_game(self.level.get_savable_state())
+                        print("Game saved!")
 
             self.screen.fill(WATER_COLOR)
             self.level.run(dt)
