@@ -18,12 +18,11 @@ class Game:
         # Check for save file
         save_path = 'savegame.json'
         loaded_data = None
+        self.show_save_dialog = False
+        self.save_dialog_result = None
         if os.path.exists(save_path):
-            # Prompt user in terminal for continue/new game
-            print("Save file detected. Type 'c' to continue or 'n' for new game:")
-            choice = input().strip().lower()
-            if choice == 'c':
-                loaded_data = load_game(save_path)
+            self.show_save_dialog = True
+            self.save_dialog_result = None
         self.level = Level(loaded_data=loaded_data)
 
         # sound
@@ -33,7 +32,7 @@ class Game:
 
     def run(self):
         import pygame
-        from save_manager import save_game
+        from save_manager import save_game, load_game
         last_time = time.time()
         while True:
             dt = time.time() - last_time
@@ -44,13 +43,40 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_m:
-                        self.level.toggle_menu()
-                    # Save game when paused and P is pressed
-                    if event.key == pygame.K_p and getattr(self.level, 'game_paused', False):
-                        save_game(self.level.get_savable_state())
-                        print("Game saved!")
+                if self.show_save_dialog:
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_c:
+                            self.save_dialog_result = 'c'
+                        elif event.key == pygame.K_n:
+                            self.save_dialog_result = 'n'
+
+                else:
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_m:
+                            self.level.toggle_menu()
+                        # Save game when paused and P is pressed
+                        if event.key == pygame.K_p and getattr(self.level, 'game_paused', False):
+                            save_game(self.level.get_savable_state())
+                            self.save_message_time = time.time()
+
+            # Handle save dialog logic
+            if self.show_save_dialog:
+                self.screen.fill(WATER_COLOR)
+                font = pygame.font.Font(None, 48)
+                text1 = font.render("Save file detected!", True, (255,255,255))
+                text2 = font.render("Press C to Continue or N for New Game", True, (255,255,0))
+                self.screen.blit(text1, (self.screen.get_width()//2 - text1.get_width()//2, 200))
+                self.screen.blit(text2, (self.screen.get_width()//2 - text2.get_width()//2, 300))
+                pygame.display.update()
+                if self.save_dialog_result:
+                    if self.save_dialog_result == 'c':
+                        loaded_data = load_game('savegame.json')
+                        self.level = Level(loaded_data=loaded_data)
+                    elif self.save_dialog_result == 'n':
+                        self.level = Level(loaded_data=None)
+                    self.show_save_dialog = False
+                self.clock.tick(FPS)
+                continue
 
             self.screen.fill(WATER_COLOR)
             self.level.run(dt)
