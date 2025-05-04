@@ -28,7 +28,7 @@ class Level:
             'defeated_enemies': defeated_enemies,
             'destroyed_grass': destroyed_grass
         }
-    def __init__(self, map_id, player=None, loaded_data=None, player_spawn_pos=None):
+    def __init__(self, map_id, player=None, loaded_data=None, player_spawn_pos=None, on_transition=None):
         # general setup
         self.display_surface = pygame.display.get_surface()
         self.game_paused = False
@@ -43,8 +43,13 @@ class Level:
         self.attackable_sprites = pygame.sprite.Group()
 
         # player setup
+
         self.player = player
         self._player_spawn_pos = player_spawn_pos
+        self.on_transition = on_transition  # callback for map transitions
+
+        # Transition points: { (x, y): {'target_map_id': ..., 'target_spawn': (x, y)} }
+        self.transition_points = {}
 
         # sprite setup
         self.create_map(map_id, loaded_data)
@@ -63,6 +68,13 @@ class Level:
         self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
 
     def create_map(self, map_id, loaded_data=None):
+        # Define transition point mapping here (could be loaded from a file or hardcoded for now)
+        # Example: { '9000': {'target_map_id': 'village', 'target_spawn': (5*TILESIZE, 10*TILESIZE)} }
+        TRANSITION_CODE_MAP = {
+            '9000': {'target_map_id': 'village', 'target_spawn': (5*TILESIZE, 10*TILESIZE)},
+            '9001': {'target_map_id': 'forest', 'target_spawn': (2*TILESIZE, 2*TILESIZE)},
+            # Add more as needed
+        }
         # Map file naming convention: map_<map_id>_<layer>.csv
         def map_file(layer):
             return f"../data/map/map_{map_id}_{layer}.csv"
@@ -132,6 +144,12 @@ class Level:
                 if col != '-1':
                     x = col_idx * TILESIZE
                     y = row_idx * TILESIZE
+                    # Transition point check
+                    if col in TRANSITION_CODE_MAP:
+                        self.transition_points[(x, y)] = TRANSITION_CODE_MAP[col]
+                        # Optionally, add a visible marker or invisible tile for debugging
+                        Tile((x, y), [self.visible_sprites], 'invisible')
+                        continue
                     if col == '394':
                         if self.player is None:
                             # Create new player if not provided
@@ -181,6 +199,16 @@ class Level:
                                 self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
                                 self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount),
                                 pathfinding_grid=self.pathfinding_grid, tile_size=TILESIZE)
+
+    def check_transition(self):
+        # Check if player is on a transition point
+        px, py = int(self.player.rect.centerx // TILESIZE) * TILESIZE, int(self.player.rect.centery // TILESIZE) * TILESIZE
+        for (tx, ty), data in self.transition_points.items():
+            if abs(px - tx) < TILESIZE // 2 and abs(py - ty) < TILESIZE // 2:
+                if self.on_transition:
+                    self.on_transition(data['target_map_id'], data['target_spawn'])
+                return True
+        return False
 
     def create_attack(self):
         self.current_attack = Weapon(
@@ -255,6 +283,8 @@ class Level:
             self.visible_sprites.update(dt)
             self.visible_sprites.enemy_update(self.player)
             self.player_attack_logic()
+            # Check for map transition
+            self.check_transition()
 
 
 class YSortCameraGroup(pygame.sprite.Group):
