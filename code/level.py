@@ -51,6 +51,7 @@ class Level:
 
         # Transition points: { (x, y): {'target_map_id': ..., 'target_spawn': (x, y)} }
         self.transition_points = {}
+        self._last_transition_tile = None  # For debounce
 
         # sprite setup
         self.create_map(map_id, loaded_data)
@@ -82,7 +83,6 @@ class Level:
             return f"../data/map/map_{map_id}_{layer}.csv"
 
         # Fallback to default if not found
-        import os
         def file_or_default(path, default):
             return path if os.path.exists(path) else default
 
@@ -204,13 +204,18 @@ class Level:
                                 pathfinding_grid=self.pathfinding_grid, tile_size=TILESIZE)
 
     def check_transition(self):
-        # Check if player is on a transition point
+        # Check if player is on a transition point (debounced)
         px, py = int(self.player.rect.centerx // TILESIZE) * TILESIZE, int(self.player.rect.centery // TILESIZE) * TILESIZE
         for (tx, ty), data in self.transition_points.items():
             if abs(px - tx) < TILESIZE // 2 and abs(py - ty) < TILESIZE // 2:
-                if self.on_transition:
-                    self.on_transition(data['target_map_id'], data['target_spawn'])
-                return True
+                if self._last_transition_tile != (tx, ty):
+                    self._last_transition_tile = (tx, ty)
+                    if self.on_transition:
+                        self.on_transition(data['target_map_id'], data['target_spawn'])
+                    return True
+                else:
+                    return False
+        self._last_transition_tile = None
         return False
 
     def create_attack(self):
