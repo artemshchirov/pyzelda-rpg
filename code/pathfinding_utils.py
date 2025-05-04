@@ -13,12 +13,9 @@ def astar(grid, start, goal):
     neighbors = [(0,1),(1,0),(-1,0),(0,-1)]
     # Early exit if start or goal is blocked
     if not (0 <= start[0] < len(grid[0]) and 0 <= start[1] < len(grid)) or not (0 <= goal[0] < len(grid[0]) and 0 <= goal[1] < len(grid)):
-        print(f"[A* DEBUG] Out of bounds: start={start} goal={goal}")
         return []
     if grid[start[1]][start[0]] == 1 or grid[goal[1]][goal[0]] == 1:
-        print(f"[A* DEBUG] Blocked: start={start}={grid[start[1]][start[0]]} goal={goal}={grid[goal[1]][goal[0]]}")
         return []
-    print(f"[A* DEBUG] start={start} goal={goal} grid_ok")
 
     close_set = set()
     came_from = {}
