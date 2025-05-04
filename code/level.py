@@ -71,9 +71,10 @@ class Level:
         # Define transition point mapping here (could be loaded from a file or hardcoded for now)
         # Example: { '9000': {'target_map_id': 'village', 'target_spawn': (5*TILESIZE, 10*TILESIZE)} }
         TRANSITION_CODE_MAP = {
-            '9000': {'target_map_id': 'village', 'target_spawn': (5*TILESIZE, 10*TILESIZE)},
-            '9001': {'target_map_id': 'forest', 'target_spawn': (2*TILESIZE, 2*TILESIZE)},
-            # Add more as needed
+            # From main map to test map (place 9000 in main map)
+            '9000': {'target_map_id': 'test', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
+            # From test map back to main map (place 9001 in test map)
+            '9001': {'target_map_id': 'default', 'target_spawn': (27*TILESIZE, 6*TILESIZE)},
         }
         # Map file naming convention: map_<map_id>_<layer>.csv
         def map_file(layer):
