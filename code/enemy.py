@@ -131,7 +131,7 @@ class Enemy(Entity):
                 else:
                     self.path = []
                 self.last_path_time = now
-            # Follow path
+            # Follow path if available, else fallback to direct movement
             if self.path:
                 next_node = self.path[0]
                 next_pos = grid_to_pos(next_node, self.tile_size)
@@ -147,7 +147,8 @@ class Enemy(Entity):
                 else:
                     self.direction = pygame.math.Vector2()
             else:
-                self.direction = pygame.math.Vector2()
+                # Fallback: direct movement toward player
+                self.direction = self.get_player_distance_direction(player)[1]
         else:
             self.direction = pygame.math.Vector2()
 
