@@ -1,4 +1,5 @@
 import pygame
+import os
 from settings import *
 from tile import Tile
 from player import Player
@@ -171,6 +172,7 @@ class Level:
                             if self._player_spawn_pos is not None:
                                 self.player.pos.x, self.player.pos.y = self._player_spawn_pos
                                 self.player.rect.center = self._player_spawn_pos
+                                self.player.hitbox.center = self._player_spawn_pos  # Ensure hitbox is synced
                             self.player.obstacle_sprites = self.obstacle_sprites
                             self.player.create_attack = self.create_attack
                             self.player.destroy_attack = self.destroy_attack
