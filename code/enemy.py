@@ -102,7 +102,6 @@ class Enemy(Entity):
             self.path = []
 
     def actions(self, player):
-        print(f'[ENEMY DEBUG] actions called for {self.monster_name}, status={{self.status}}')
         now = pygame.time.get_ticks()
         if self.status == 'attack':
             self.attack_time = now
@@ -206,7 +205,6 @@ class Enemy(Entity):
             self.direction *= -self.resistance
 
     def update(self, dt):
-        print(f'[ENEMY DEBUG] update called for {self.monster_name}')
         self.hit_reaction()
         self.move(self.speed, self.pos, dt)
         self.animate(dt)
