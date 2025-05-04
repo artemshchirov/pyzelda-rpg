@@ -4,6 +4,13 @@ from random import choice
 
 
 class AnimationPlayer:
+    def create_grass_particles(self, pos, groups):
+        grass_animation_frames = choice(self.frames['leaf'])
+        ParticleEffect(pos, grass_animation_frames, groups)
+
+    def create_particles(self, animation_type, pos, groups):
+        animation_frames = self.frames[animation_type]
+        ParticleEffect(pos, animation_frames, groups)
     def reflect_images(self, frames):
         new_frames = []
         for frame in frames:
@@ -102,21 +109,6 @@ class FloatingText(pygame.sprite.Sprite):
         if self.elapsed >= self.duration:
             self.kill()
 
-    def reflect_images(self, frames):
-        new_frames = []
-        for frame in frames:
-            flipped_frame = pygame.transform.flip(frame, True, False)
-            new_frames.append(flipped_frame)
-
-        return new_frames
-
-    def create_grass_particles(self, pos, groups):
-        grass_animation_frames = choice(self.frames['leaf'])
-        ParticleEffect(pos, grass_animation_frames, groups)
-
-    def create_particles(self, animation_type, pos, groups):
-        animation_frames = self.frames[animation_type]
-        ParticleEffect(pos, animation_frames, groups)
 
 
 
