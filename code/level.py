@@ -152,7 +152,7 @@ class Level:
                                 [self.visible_sprites, self.attackable_sprites],
                                 self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
                                 self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount),
-                                self.pathfinding_grid, TILESIZE)
+                                pathfinding_grid=self.pathfinding_grid, tile_size=TILESIZE)
 
     def create_attack(self):
         self.current_attack = Weapon(

@@ -108,6 +108,9 @@ class Enemy(Entity):
             self.damage_player(self.attack_damage, self.attack_type)
             self.attack_sound.play()
         elif self.status == 'move':
+            # Debug: print path info if grid or tile_size missing
+            if self.pathfinding_grid is None or self.tile_size is None:
+                print(f"[DEBUG] Enemy {self.monster_name} missing pathfinding grid or tile_size!")
             recalc = False
             if not self.path or now - self.last_path_time > self.path_recalc_interval:
                 recalc = True
