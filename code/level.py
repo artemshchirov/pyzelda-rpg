@@ -13,7 +13,22 @@ from upgrade import Upgrade
 
 
 class Level:
-    def __init__(self):
+    def get_savable_state(self):
+        # Collect defeated enemies and destroyed grass by their initial positions
+        defeated_enemies = []
+        destroyed_grass = []
+        for sprite in self.attackable_sprites:
+            if hasattr(sprite, 'sprite_type'):
+                if sprite.sprite_type == 'enemy' and not sprite.alive():
+                    defeated_enemies.append({'x': sprite.rect.x, 'y': sprite.rect.y})
+                if sprite.sprite_type == 'grass' and not sprite.alive():
+                    destroyed_grass.append({'x': sprite.rect.x, 'y': sprite.rect.y})
+        return {
+            'player': self.player.to_dict(),
+            'defeated_enemies': defeated_enemies,
+            'destroyed_grass': destroyed_grass
+        }
+    def __init__(self, loaded_data=None):
         # general setup
         self.display_surface = pygame.display.get_surface()
         self.game_paused = False
@@ -28,7 +43,7 @@ class Level:
         self.attackable_sprites = pygame.sprite.Group()
 
         # sprite setup
-        self.create_map()
+        self.create_map(loaded_data)
 
         # user interface
         self.ui = UI()
@@ -38,7 +53,12 @@ class Level:
         self.animation_player = AnimationPlayer()
         self.magic_player = MagicPlayer(self.animation_player)
 
-    def create_map(self):
+    def trigger_exp_particles(self, enemy_pos, player_pos, exp_amount=0):
+        # Use sparkle as placeholder if exp_orb graphics are missing
+        animation_type = 'exp_orb' if 'exp_orb' in self.animation_player.frames else 'sparkle'
+        self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
+
+    def create_map(self, loaded_data=None):
         layouts = {
             'boundary': import_csv_layout('../data/map/map_FloorBlocks.csv'),
             'grass': import_csv_layout('../data/map/map_Grass.csv'),
@@ -50,6 +70,10 @@ class Level:
             'grass': import_folder('../graphics/grass'),
             'objects': import_folder('../graphics/objects'),
         }
+
+        # Build pathfinding grid after all obstacles are placed
+        from pathfinding_utils import build_grid
+        self.pathfinding_grid = None
 
         for style, layout in layouts.items():
             for row_idx, row in enumerate(layout):
@@ -64,12 +88,19 @@ class Level:
                                  'invisible')
 
                         if style == 'grass':
-                            random_grass_image = choice(graphics['grass'])
-                            Tile((x, y),
-                                 [self.visible_sprites,
-                                     self.obstacle_sprites,  self.attackable_sprites],
-                                 'grass',
-                                 random_grass_image)
+                            destroyed = False
+                            if loaded_data and 'destroyed_grass' in loaded_data:
+                                for g in loaded_data['destroyed_grass']:
+                                    if g['x'] == x and g['y'] == y:
+                                        destroyed = True
+                                        break
+                            if not destroyed:
+                                random_grass_image = choice(graphics['grass'])
+                                Tile((x, y),
+                                     [self.visible_sprites,
+                                         self.obstacle_sprites,  self.attackable_sprites],
+                                     'grass',
+                                     random_grass_image)
 
                         if style == 'object':
                             surf = graphics['objects'][int(col)]
@@ -78,32 +109,50 @@ class Level:
                                  'object',
                                  surf)
 
-                        if style == 'entities':
-                            if col == '394':
-                                self.player = Player(
-                                    (x, y),
-                                    [self.visible_sprites],
-                                    self.obstacle_sprites,
-                                    self.create_attack,
-                                    self.destroy_attack,
-                                    self.create_magic)
-                            else:
-                                if col == '390':
-                                    monster_name = 'bamboo'
-                                elif col == '391':
-                                    monster_name = 'spirit'
-                                elif col == '392':
-                                    monster_name = 'raccoon'
-                                    # TODO do an offset for bigger than standard 64x64 tiles. Use y -= TILESIZE
-                                else:
-                                    monster_name = 'squid'
+        # Now build the pathfinding grid
+        self.pathfinding_grid = build_grid(WIDTH, HEIGHT, TILESIZE, self.obstacle_sprites)
 
-                                Enemy(
-                                    monster_name,
-                                    (x, y),
-                                    [self.visible_sprites, self.attackable_sprites],
-                                    self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
-                                    self.add_exp)
+        # Place entities (player and enemies) after grid is built
+        entities_layout = layouts['entities']
+        for row_idx, row in enumerate(entities_layout):
+            for col_idx, col in enumerate(row):
+                if col != '-1':
+                    x = col_idx * TILESIZE
+                    y = row_idx * TILESIZE
+                    if col == '394':
+                        self.player = Player(
+                            (x, y),
+                            [self.visible_sprites],
+                            self.obstacle_sprites,
+                            self.create_attack,
+                            self.destroy_attack,
+                            self.create_magic)
+                        if loaded_data and 'player' in loaded_data:
+                            self.player.from_dict(loaded_data['player'])
+                    else:
+                        defeated = False
+                        if loaded_data and 'defeated_enemies' in loaded_data:
+                            for e in loaded_data['defeated_enemies']:
+                                if e['x'] == x and e['y'] == y:
+                                    defeated = True
+                                    break
+                        if not defeated:
+                            if col == '390':
+                                monster_name = 'bamboo'
+                            elif col == '391':
+                                monster_name = 'spirit'
+                            elif col == '392':
+                                monster_name = 'raccoon'
+                            else:
+                                monster_name = 'squid'
+
+                            Enemy(
+                                monster_name,
+                                (x, y),
+                                [self.visible_sprites, self.attackable_sprites],
+                                self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
+                                self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount),
+                                pathfinding_grid=self.pathfinding_grid, tile_size=TILESIZE)
 
     def create_attack(self):
         self.current_attack = Weapon(
@@ -158,6 +207,14 @@ class Level:
 
     def toggle_menu(self):
         self.game_paused = not self.game_paused
+        # Save game if paused and 'P' is pressed
+        if self.game_paused:
+            import pygame
+            from save_manager import save_game
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_p]:
+                save_game(self.get_savable_state())
+                print("Game saved!")
 
     def run(self, dt):
         # update and draw the game

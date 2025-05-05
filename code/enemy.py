@@ -1,11 +1,13 @@
 import pygame
+
 from settings import *
 from support import import_folder
 from entity import Entity
+from pathfinding_utils import astar, pos_to_grid, grid_to_pos
 
 
 class Enemy(Entity):
-    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player, trigger_death_particles, add_exp):
+    def __init__(self, monster_name, pos, groups, obstacle_sprites, damage_player, trigger_death_particles, add_exp, trigger_exp_particles=None, pathfinding_grid=None, tile_size=None):
         super().__init__(groups, pos)
         # general setup
         self.sprite_type = 'enemy'
@@ -31,6 +33,10 @@ class Enemy(Entity):
         self.resistance = monster_info['resistance']
         self.attack_radius = monster_info['attack_radius']
         self.notice_radius = monster_info['notice_radius']
+
+        # exp orb callback
+        self.trigger_exp_particles = trigger_exp_particles
+        self.last_player_pos = None
         self.attack_type = monster_info['attack_type']
 
         # player interaction
@@ -53,6 +59,14 @@ class Enemy(Entity):
         self.hit_sound.set_volume(0.6)
         self.death_sound.set_volume(0.6)
         self.attack_sound.set_volume(0.3)
+
+        # Pathfinding
+        self.pathfinding_grid = pathfinding_grid
+        self.tile_size = tile_size
+        self.path = []
+        self.last_path_time = 0
+        self.path_recalc_interval = 500  # ms
+        self._last_player_grid = None
 
     def import_graphics(self, name):
         self.animations = {'idle': [], 'move': [], 'attack': []}
@@ -83,14 +97,53 @@ class Enemy(Entity):
             self.status = 'move'
         else:
             self.status = 'idle'
+        # Clear path if not moving
+        if self.status != 'move':
+            self.path = []
 
     def actions(self, player):
+        now = pygame.time.get_ticks()
         if self.status == 'attack':
-            self.attack_time = pygame.time.get_ticks()
+            self.attack_time = now
             self.damage_player(self.attack_damage, self.attack_type)
             self.attack_sound.play()
         elif self.status == 'move':
-            self.direction = self.get_player_distance_direction(player)[1]
+            recalc = False
+            if not self.path or now - self.last_path_time > self.path_recalc_interval:
+                recalc = True
+            else:
+                # If player moved to a new grid cell, recalc
+                current_player_grid = pos_to_grid(player.rect.center, self.tile_size)
+                if self._last_player_grid != current_player_grid:
+                    recalc = True
+            if recalc and self.pathfinding_grid is not None:
+                start = pos_to_grid(self.rect.center, self.tile_size)
+                goal = pos_to_grid(player.rect.center, self.tile_size)
+                self._last_player_grid = goal
+                path = astar(self.pathfinding_grid, start, goal)
+                if path and len(path) > 1:
+                    self.path = path[1:]  # skip current position
+                else:
+                    self.path = []
+                self.last_path_time = now
+            # Follow path if available, else fallback to direct movement
+            if self.path:
+                next_node = self.path[0]
+                next_pos = grid_to_pos(next_node, self.tile_size)
+                vec_to_next = pygame.math.Vector2(next_pos) - pygame.math.Vector2(self.rect.center)
+                if vec_to_next.length() < 4:  # close enough to node
+                    self.path.pop(0)
+                    if self.path:
+                        next_node = self.path[0]
+                        next_pos = grid_to_pos(next_node, self.tile_size)
+                        vec_to_next = pygame.math.Vector2(next_pos) - pygame.math.Vector2(self.rect.center)
+                if vec_to_next.length() > 0:
+                    self.direction = vec_to_next.normalize()
+                else:
+                    self.direction = pygame.math.Vector2()
+            else:
+                # Fallback: direct movement toward player
+                self.direction = self.get_player_distance_direction(player)[1]
         else:
             self.direction = pygame.math.Vector2()
 
@@ -138,6 +191,8 @@ class Enemy(Entity):
             self.kill()
             self.trigger_death_particles(self.rect.center, self.monster_name)
             self.add_exp(self.exp)
+            if self.trigger_exp_particles and self.last_player_pos:
+                self.trigger_exp_particles(self.rect.center, self.last_player_pos, self.exp)
             self.death_sound.play()
 
     def hit_reaction(self):
@@ -154,3 +209,5 @@ class Enemy(Entity):
     def enemy_update(self, player):
         self.get_status(player)
         self.actions(player)
+        # Store last player position for exp orb targeting
+        self.last_player_pos = player.rect.center

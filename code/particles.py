@@ -4,6 +4,26 @@ from random import choice
 
 
 class AnimationPlayer:
+    def create_grass_particles(self, pos, groups):
+        grass_animation_frames = choice(self.frames['leaf'])
+        ParticleEffect(pos, grass_animation_frames, groups)
+
+    def create_particles(self, animation_type, pos, groups):
+        animation_frames = self.frames[animation_type]
+        ParticleEffect(pos, animation_frames, groups)
+    def reflect_images(self, frames):
+        new_frames = []
+        for frame in frames:
+            flipped_frame = pygame.transform.flip(frame, True, False)
+            new_frames.append(flipped_frame)
+        return new_frames
+
+    def create_floating_text(self, text, pos, groups, color=(255, 255, 0), font_size=18, duration=1.2, rise_distance=30):
+        """
+        Spawn floating text at pos that rises and fades out.
+        """
+        FloatingText(text, pos, groups, color, font_size, duration, rise_distance)
+
     def __init__(self):
         self.frames = {
             # magic
@@ -32,40 +52,75 @@ class AnimationPlayer:
                 import_folder('../graphics/particles/leaf4'),
                 import_folder('../graphics/particles/leaf5'),
                 import_folder('../graphics/particles/leaf6'),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf1')),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf2')),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf3')),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf4')),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf5')),
-                self.reflect_images(import_folder(
-                    '../graphics/particles/leaf6')),
-            )
+                self.reflect_images(import_folder('../graphics/particles/leaf1')),
+                self.reflect_images(import_folder('../graphics/particles/leaf2')),
+                self.reflect_images(import_folder('../graphics/particles/leaf3')),
+                self.reflect_images(import_folder('../graphics/particles/leaf4')),
+                self.reflect_images(import_folder('../graphics/particles/leaf5')),
+                self.reflect_images(import_folder('../graphics/particles/leaf6')),
+            ),
+            # exp orb
+            'exp_orb': import_folder('../graphics/particles/exp_orb'),
         }
+    def create_exp_particles(self, pos, target_pos, groups, amount=5, speed=250, exp_amount=None):
+        """
+        Spawn several exp orb particles at pos, moving towards target_pos.
+        """
+        from random import uniform
+        # Fallback to sparkle if exp_orb frames are missing or empty
+        orb_frames = self.frames.get('exp_orb', [])
+        if not orb_frames:
+            orb_frames = self.frames.get('sparkle', [])
+        if not orb_frames:
+            # If still empty, do nothing
+            return
+        for _ in range(amount):
+            # Add a small random offset to spawn position for spread
+            offset = pygame.math.Vector2(uniform(-10, 10), uniform(-10, 10))
+            spawn_pos = (pos[0] + offset.x, pos[1] + offset.y)
+            MovingParticleEffect(
+                spawn_pos,
+                orb_frames,
+                groups,
+                target_pos=target_pos,
+                speed=speed,
+                sprite_type='exp_orb',
+            )
+        # Spawn floating text if exp_amount is provided
+        if exp_amount is not None:
+            self.create_floating_text(f"+{exp_amount} XP", pos, groups)
+# FloatingText sprite for displaying temporary text in the world
+class FloatingText(pygame.sprite.Sprite):
+    def __init__(self, text, pos, groups, color=(255, 255, 0), font_size=18, duration=1.2, rise_distance=30):
+        super().__init__(groups)
+        self.font = pygame.font.Font(get_path('../font/joystix.ttf'), font_size)
+        self.text = text
+        self.color = color
+        self.image = self.font.render(self.text, True, self.color)
+        self.rect = self.image.get_rect(center=pos)
+        self.start_pos = pygame.math.Vector2(pos)
+        self.duration = duration
+        self.elapsed = 0
+        self.rise_distance = rise_distance
+        self.alpha = 255
 
-    def reflect_images(self, frames):
-        new_frames = []
-        for frame in frames:
-            flipped_frame = pygame.transform.flip(frame, True, False)
-            new_frames.append(flipped_frame)
+    def update(self, dt):
+        self.elapsed += dt
+        # Move up over time
+        progress = min(self.elapsed / self.duration, 1.0)
+        offset_y = -self.rise_distance * progress
+        self.rect.center = (self.start_pos.x, self.start_pos.y + offset_y)
+        # Fade out
+        self.alpha = int(255 * (1 - progress))
+        self.image.set_alpha(self.alpha)
+        if self.elapsed >= self.duration:
+            self.kill()
 
-        return new_frames
 
-    def create_grass_particles(self, pos, groups):
-        grass_animation_frames = choice(self.frames['leaf'])
-        ParticleEffect(pos, grass_animation_frames, groups)
-
-    def create_particles(self, animation_type, pos, groups):
-        animation_frames = self.frames[animation_type]
-        ParticleEffect(pos, animation_frames, groups)
 
 
 class ParticleEffect(pygame.sprite.Sprite):
-    def __init__(self, pos, animation_frames,  groups, sprite_type='magic',):
+    def __init__(self, pos, animation_frames, groups, sprite_type='magic'):
         super().__init__(groups)
         self.sprite_type = sprite_type
         self.frame_index = 0
@@ -83,3 +138,32 @@ class ParticleEffect(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.animate(dt)
+
+
+# MovingParticleEffect for exp orbs
+class MovingParticleEffect(ParticleEffect):
+    def __init__(self, pos, animation_frames, groups, target_pos, speed=250, sprite_type='exp_orb', max_lifetime=1.5):
+        super().__init__(pos, animation_frames, groups, sprite_type)
+        self.target_pos = pygame.math.Vector2(target_pos)
+        self.pos = pygame.math.Vector2(pos)
+        self.speed = speed  # pixels per second
+        self.max_lifetime = max_lifetime  # seconds
+        self.lifetime = 0
+
+    def update(self, dt):
+        # Move towards target
+        direction = self.target_pos - self.pos
+        distance = direction.length()
+        if distance > 0:
+            direction = direction.normalize()
+            move_dist = min(self.speed * dt, distance)
+            self.pos += direction * move_dist
+            self.rect.center = (round(self.pos.x), round(self.pos.y))
+
+        # Animate
+        self.animate(dt)
+
+        # Lifetime
+        self.lifetime += dt
+        if distance < 16 or self.lifetime > self.max_lifetime:
+            self.kill()
