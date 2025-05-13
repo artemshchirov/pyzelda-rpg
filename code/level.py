@@ -1,4 +1,5 @@
 import pygame
+import os
 from settings import *
 from tile import Tile
 from player import Player
@@ -28,7 +29,7 @@ class Level:
             'defeated_enemies': defeated_enemies,
             'destroyed_grass': destroyed_grass
         }
-    def __init__(self, loaded_data=None):
+    def __init__(self, map_id, player=None, loaded_data=None, player_spawn_pos=None, on_transition=None):
         # general setup
         self.display_surface = pygame.display.get_surface()
         self.game_paused = False
@@ -42,8 +43,18 @@ class Level:
         self.attack_sprites = pygame.sprite.Group()
         self.attackable_sprites = pygame.sprite.Group()
 
+        # player setup
+
+        self.player = player
+        self._player_spawn_pos = player_spawn_pos
+        self.on_transition = on_transition  # callback for map transitions
+
+        # Transition points: { (x, y): {'target_map_id': ..., 'target_spawn': (x, y)} }
+        self.transition_points = {}
+        self._last_transition_tile = None  # For debounce
+
         # sprite setup
-        self.create_map(loaded_data)
+        self.create_map(map_id, loaded_data)
 
         # user interface
         self.ui = UI()
@@ -58,12 +69,34 @@ class Level:
         animation_type = 'exp_orb' if 'exp_orb' in self.animation_player.frames else 'sparkle'
         self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
 
-    def create_map(self, loaded_data=None):
+    def create_map(self, map_id, loaded_data=None):
+        # Define transition point mapping here (could be loaded from a file or hardcoded for now)
+        # Example: { '9000': {'target_map_id': 'village', 'target_spawn': (5*TILESIZE, 10*TILESIZE)} }
+        TRANSITION_CODE_MAP = {
+            # From main map to test map (place 9000 in main map)
+            '9000': {'target_map_id': 'test', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
+            # From test map back to main map (place 9001 in test map)
+            '9001': {'target_map_id': 'default', 'target_spawn': (27*TILESIZE, 6*TILESIZE)},
+            # From test map to island (place 9002 in test map)
+            '9002': {'target_map_id': 'island', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
+            # From island back to test map (place 9003 in island map)
+            '9003': {'target_map_id': 'test', 'target_spawn': (8*TILESIZE, 5*TILESIZE)},
+            # From island to new island2 (place 9004 in island2 map)
+            '9004': {'target_map_id': 'island2', 'target_spawn': (4*TILESIZE, 4*TILESIZE)},
+        }
+        # Map file naming convention: map_<map_id>_<layer>.csv
+        def map_file(layer):
+            return f"../data/map/map_{map_id}_{layer}.csv"
+
+        # Fallback to default if not found
+        def file_or_default(path, default):
+            return path if os.path.exists(path) else default
+
         layouts = {
-            'boundary': import_csv_layout('../data/map/map_FloorBlocks.csv'),
-            'grass': import_csv_layout('../data/map/map_Grass.csv'),
-            'object': import_csv_layout('../data/map/map_Objects.csv'),
-            'entities': import_csv_layout('../data/map/map_Entities.csv'),
+            'boundary': import_csv_layout(file_or_default(map_file('FloorBlocks'), '../data/map/map_FloorBlocks.csv')),
+            'grass': import_csv_layout(file_or_default(map_file('Grass'), '../data/map/map_Grass.csv')),
+            'object': import_csv_layout(file_or_default(map_file('Objects'), '../data/map/map_Objects.csv')),
+            'entities': import_csv_layout(file_or_default(map_file('Entities'), '../data/map/map_Entities.csv')),
         }
 
         graphics = {
@@ -119,16 +152,38 @@ class Level:
                 if col != '-1':
                     x = col_idx * TILESIZE
                     y = row_idx * TILESIZE
+                    # Transition point check
+                    if col in TRANSITION_CODE_MAP:
+                        self.transition_points[(x, y)] = TRANSITION_CODE_MAP[col]
+                        # Optionally, add a visible marker or invisible tile for debugging
+                        Tile((x, y), [self.visible_sprites], 'invisible')
+                        continue
                     if col == '394':
-                        self.player = Player(
-                            (x, y),
-                            [self.visible_sprites],
-                            self.obstacle_sprites,
-                            self.create_attack,
-                            self.destroy_attack,
-                            self.create_magic)
-                        if loaded_data and 'player' in loaded_data:
-                            self.player.from_dict(loaded_data['player'])
+                        if self.player is None:
+                            # Create new player if not provided
+                            spawn_pos = (x, y)
+                            if self._player_spawn_pos is not None:
+                                spawn_pos = self._player_spawn_pos
+                            self.player = Player(
+                                spawn_pos,
+                                [self.visible_sprites],
+                                self.obstacle_sprites,
+                                self.create_attack,
+                                self.destroy_attack,
+                                self.create_magic)
+                            if loaded_data and 'player' in loaded_data:
+                                self.player.from_dict(loaded_data['player'])
+                        else:
+                            # Move provided player to spawn
+                            if self._player_spawn_pos is not None:
+                                self.player.pos.x, self.player.pos.y = self._player_spawn_pos
+                                self.player.rect.center = self._player_spawn_pos
+                                self.player.hitbox.center = self._player_spawn_pos  # Ensure hitbox is synced
+                            self.player.obstacle_sprites = self.obstacle_sprites
+                            self.player.create_attack = self.create_attack
+                            self.player.destroy_attack = self.destroy_attack
+                            self.player.create_magic = self.create_magic
+                            self.visible_sprites.add(self.player)
                     else:
                         defeated = False
                         if loaded_data and 'defeated_enemies' in loaded_data:
@@ -153,6 +208,21 @@ class Level:
                                 self.obstacle_sprites, self.damage_player, self.trigger_death_particles,
                                 self.add_exp, lambda enemy_pos, player_pos, exp_amount=0, self=self: self.trigger_exp_particles(enemy_pos, player_pos, exp_amount),
                                 pathfinding_grid=self.pathfinding_grid, tile_size=TILESIZE)
+
+    def check_transition(self):
+        # Check if player is on a transition point (debounced)
+        px, py = int(self.player.rect.centerx // TILESIZE) * TILESIZE, int(self.player.rect.centery // TILESIZE) * TILESIZE
+        for (tx, ty), data in self.transition_points.items():
+            if abs(px - tx) < TILESIZE // 2 and abs(py - ty) < TILESIZE // 2:
+                if self._last_transition_tile != (tx, ty):
+                    self._last_transition_tile = (tx, ty)
+                    if self.on_transition:
+                        self.on_transition(data['target_map_id'], data['target_spawn'])
+                    return True
+                else:
+                    return False
+        self._last_transition_tile = None
+        return False
 
     def create_attack(self):
         self.current_attack = Weapon(
@@ -227,6 +297,8 @@ class Level:
             self.visible_sprites.update(dt)
             self.visible_sprites.enemy_update(self.player)
             self.player_attack_logic()
+            # Check for map transition
+            self.check_transition()
 
 
 class YSortCameraGroup(pygame.sprite.Group):

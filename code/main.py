@@ -10,10 +10,15 @@ class Game:
     def __init__(self):
         import os
         from save_manager import load_game
+        from player import Player
         pygame.init()
         pygame.display.set_caption('PyZelda RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
+
+        # Map system
+        self.current_map_id = 'default'  # can be changed for other maps
+        self.player = None
 
         # Check for save file
         save_path = 'savegame.json'
@@ -23,12 +28,54 @@ class Game:
         if os.path.exists(save_path):
             self.show_save_dialog = True
             self.save_dialog_result = None
-        self.level = Level(loaded_data=loaded_data)
 
-        # sound
-        main_sound = pygame.mixer.Sound(get_path('../audio/main.ogg'))
-        main_sound.set_volume(0.5)
-        main_sound.play(loops=-1)
+        # Create player and level
+        if loaded_data and 'player' in loaded_data:
+            # If loading, player will be created by Level and then extracted
+            self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data, on_transition=self.handle_transition)
+            self.player = self.level.player
+        else:
+            # New game
+            self.player = None  # Will be created by Level
+            self.level = Level(self.current_map_id, player=self.player, loaded_data=None, on_transition=self.handle_transition)
+            self.player = self.level.player
+
+    def fade(self, fade_in=False, speed=15):
+        # fade_in: if True, fade from black to game; else fade to black
+        fade_surface = pygame.Surface((WIDTH, HEIGHT))
+        fade_surface.fill((0, 0, 0))
+        clock = pygame.time.Clock()
+        if not fade_in:
+            for alpha in range(0, 256, speed):
+                fade_surface.set_alpha(alpha)
+                self.screen.fill((0, 0, 0))
+                self.level.run(0)  # draw current frame
+                self.screen.blit(fade_surface, (0, 0))
+                pygame.display.update()
+                clock.tick(FPS // 2)
+        else:
+            for alpha in range(255, -1, -speed):
+                fade_surface.set_alpha(alpha)
+                self.screen.fill((0, 0, 0))
+                self.level.run(0)  # draw new frame
+                self.screen.blit(fade_surface, (0, 0))
+                pygame.display.update()
+                clock.tick(FPS // 2)
+
+    def handle_transition(self, target_map_id, target_spawn):
+        # Fade out
+        self.fade(fade_in=False)
+        # Switch map
+        self.current_map_id = target_map_id
+        self.level = Level(
+            self.current_map_id,
+            player=self.player,
+            loaded_data=None,
+            player_spawn_pos=target_spawn,
+            on_transition=self.handle_transition
+        )
+        # Fade in
+        self.fade(fade_in=True)
 
     def run(self):
         import pygame
@@ -95,9 +142,11 @@ class Game:
                 if self.save_dialog_result:
                     if self.save_dialog_result == 'c':
                         loaded_data = load_game('savegame.json')
-                        self.level = Level(loaded_data=loaded_data)
+                        self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data, on_transition=self.handle_transition)
+                        self.player = self.level.player
                     elif self.save_dialog_result == 'n':
-                        self.level = Level(loaded_data=None)
+                        self.level = Level(self.current_map_id, player=None, loaded_data=None, on_transition=self.handle_transition)
+                        self.player = self.level.player
                     self.show_save_dialog = False
                 self.clock.tick(FPS)
                 continue
