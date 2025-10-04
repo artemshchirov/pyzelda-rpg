@@ -13,7 +13,6 @@ class Upgrade:
         self.font = pygame.font.Font(UI_FONT, UI_FONT_SIZE)
 
         # item creation
-        print(self.attributes_len)
         self.width = self.display_surface.get_size()[
             0] // (self.attributes_len + 1)
         self.height = self.display_surface.get_size()[1] * 0.8
