@@ -1,3 +1,7 @@
+import warnings
+# Suppress pkg_resources deprecation warning from pygame
+warnings.filterwarnings('ignore', category=UserWarning, message='.*pkg_resources.*')
+
 import pygame
 import sys
 import time
