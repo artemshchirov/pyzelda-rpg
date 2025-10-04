@@ -41,9 +41,9 @@ class Upgrade:
                 self.items[self.selection_index].trigger(self.player)
 
     def selection_cooldown(self):
-        if not self.can_move:
+        if not self.can_move and self.selection_time is not None:
             current_time = pygame.time.get_ticks()
-            if current_time - self.selection_time >= 300:
+            if current_time - int(self.selection_time) >= 300:
                 self.can_move = True
 
     def create_items(self):
