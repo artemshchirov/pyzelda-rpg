@@ -98,6 +98,12 @@ class Level:
             'entities': import_csv_layout(file_or_default(map_file('Entities'), '../data/map/map_Entities.csv')),
         }
 
+        # Set default spawn to center of map if not specified
+        if self._player_spawn_pos is None:
+            map_width = len(layouts['boundary'][0]) * TILESIZE
+            map_height = len(layouts['boundary']) * TILESIZE
+            self._player_spawn_pos = (map_width // 2, map_height // 2)
+
         graphics = {
             'grass': import_folder('../graphics/grass'),
             'objects': import_folder('../graphics/objects'),
