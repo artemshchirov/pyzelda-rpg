@@ -1,15 +1,16 @@
 import warnings
-# Suppress pkg_resources deprecation warning from pygame
-warnings.filterwarnings('ignore', category=UserWarning, message='.*pkg_resources.*')
 
 import pygame
 import sys
 import time
 import os
 from random import randint
-from settings import *
+from settings import WIDTH, HEIGHT, FPS, WATER_COLOR
 from level import Level
 from support import get_path
+
+# Suppress pkg_resources deprecation warning from pygame
+warnings.filterwarnings('ignore', category=UserWarning, message='.*pkg_resources.*')
 
 # UI Constants
 START_BG_COLOR = (20, 20, 40)
@@ -39,9 +40,6 @@ PARTICLE_COUNT_DEATH = 30  # Reduced for performance
 
 class Game:
     def __init__(self):
-        import os
-        from save_manager import load_game
-        from player import Player
         pygame.init()
         pygame.display.set_caption('PyZelda RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))

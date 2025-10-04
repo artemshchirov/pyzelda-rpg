@@ -1,6 +1,6 @@
 import pygame
 import os
-from settings import *
+from settings import TILESIZE, WIDTH, HEIGHT
 from tile import Tile
 from player import Player
 from support import get_path, import_csv_layout, import_folder
@@ -66,7 +66,6 @@ class Level:
 
     def trigger_exp_particles(self, enemy_pos, player_pos, exp_amount=0):
         # Use sparkle as placeholder if exp_orb graphics are missing
-        animation_type = 'exp_orb' if 'exp_orb' in self.animation_player.frames else 'sparkle'
         self.animation_player.create_exp_particles(enemy_pos, player_pos, self.visible_sprites, amount=5, exp_amount=exp_amount)
 
     def create_map(self, map_id, loaded_data=None):

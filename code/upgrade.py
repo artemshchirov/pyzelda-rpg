@@ -1,5 +1,5 @@
 import pygame
-from settings import *
+from settings import UI_FONT, UI_FONT_SIZE, TEXT_COLOR_SELECTED, TEXT_COLOR, BAR_COLOR_SELECTED, BAR_COLOR, UPGRADE_BG_COLOR_SELECTED, UI_BG_COLOR, UI_BORDER_COLOR
 
 
 class Upgrade:
@@ -76,8 +76,8 @@ class Upgrade:
 
 
 class Item:
-    def __init__(self, l, t, w, h, index, font):
-        self.rect = pygame.Rect(l, t, w, h)
+    def __init__(self, left, t, w, h, index, font):
+        self.rect = pygame.Rect(left, t, w, h)
         self.index = index
         self.font = font
 

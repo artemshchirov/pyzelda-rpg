@@ -1,7 +1,6 @@
 import pygame
-from settings import *
+from settings import magic_data, TILESIZE
 from random import randint
-from support import get_path
 
 
 class MagicPlayer:
