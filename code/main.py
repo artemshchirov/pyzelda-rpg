@@ -1,10 +1,36 @@
 import pygame
 import sys
 import time
+import os
 from random import randint
 from settings import *
 from level import Level
 from support import get_path
+
+# UI Constants
+START_BG_COLOR = (20, 20, 40)
+DEATH_BG_COLOR = (40, 0, 0)
+TITLE_COLOR = (255, 215, 0)
+SUBTITLE_COLOR = (200, 200, 200)
+MENU_COLOR = (255, 255, 255)
+DEATH_TITLE_COLOR = (255, 0, 0)
+PARTICLE_COLOR = (100, 150, 255)
+DEATH_PARTICLE_BASE_COLOR = (100, 0, 0)
+
+TITLE_FONT_SIZE = 72
+SUBTITLE_FONT_SIZE = 36
+MENU_FONT_SIZE = 48
+STATS_FONT_SIZE = 36
+
+TITLE_Y_OFFSET = HEIGHT // 3
+SUBTITLE_Y_OFFSET = TITLE_Y_OFFSET + 80
+START_MENU_Y_OFFSET = HEIGHT // 2 + 50
+QUIT_MENU_Y_OFFSET = HEIGHT // 2 + 120
+DEATH_MENU_Y_OFFSET = HEIGHT // 2 + 80
+DEATH_QUIT_Y_OFFSET = HEIGHT // 2 + 140
+
+PARTICLE_COUNT_START = 20
+PARTICLE_COUNT_DEATH = 30  # Reduced for performance
 
 
 class Game:
@@ -20,14 +46,89 @@ class Game:
         # Game states
         self.game_state = 'start'  # 'start', 'game', 'death'
 
-        # Sounds
-        self.death_sound = pygame.mixer.Sound(get_path('../audio/death.wav'))
-        self.death_sound.set_volume(0.6)
+        # Fonts (pre-loaded for performance)
+        self.font_title = pygame.font.Font(None, TITLE_FONT_SIZE)
+        self.font_subtitle = pygame.font.Font(None, SUBTITLE_FONT_SIZE)
+        self.font_menu = pygame.font.Font(None, MENU_FONT_SIZE)
+        self.font_stats = pygame.font.Font(None, STATS_FONT_SIZE)
 
-        # Background music
-        pygame.mixer.music.load(get_path('../audio/main.ogg'))
-        pygame.mixer.music.set_volume(0.3)
-        pygame.mixer.music.play(-1)  # Loop indefinitely
+        # Audio (with error handling)
+        try:
+            self.death_sound = pygame.mixer.Sound(get_path('../audio/death.wav'))
+            self.death_sound.set_volume(0.6)
+        except pygame.error:
+            print("Warning: Could not load death sound effect")
+            self.death_sound = None
+
+        try:
+            pygame.mixer.music.load(get_path('../audio/main.ogg'))
+            pygame.mixer.music.set_volume(0.3)
+            pygame.mixer.music.play(-1)  # Loop indefinitely
+        except pygame.error:
+            print("Warning: Could not load background music")
+
+        # Particle animation data
+        self.death_particles = []
+        self._init_death_particles()
+
+        # Menu state
+        self.selected_menu_option = 0  # 0 = Start, 1 = Quit
+
+    def _init_death_particles(self):
+        """Initialize death screen particles with random properties"""
+        self.death_particles = []
+        for _ in range(PARTICLE_COUNT_DEATH):
+            particle = {
+                'x': randint(0, WIDTH),
+                'y': randint(0, HEIGHT),
+                'size': randint(1, 4),
+                'speed_x': randint(-2, 2),
+                'speed_y': randint(-2, 2),
+                'color': (randint(100, 255), 0, 0)
+            }
+            self.death_particles.append(particle)
+
+    def _update_and_draw_death_particles(self):
+        """Update and draw animated death particles"""
+        for particle in self.death_particles:
+            # Update position
+            particle['x'] += particle['speed_x']
+            particle['y'] += particle['speed_y']
+
+            # Wrap around screen edges
+            if particle['x'] < 0:
+                particle['x'] = WIDTH
+            elif particle['x'] > WIDTH:
+                particle['x'] = 0
+            if particle['y'] < 0:
+                particle['y'] = HEIGHT
+            elif particle['y'] > HEIGHT:
+                particle['y'] = 0
+
+            # Draw particle
+            pygame.draw.circle(self.screen, particle['color'],
+                             (int(particle['x']), int(particle['y'])), particle['size'])
+
+    def _render_highlighted_text(self, text, font, color, highlight_color, center_pos, selected=False):
+        """Render text with optional highlight effect"""
+        if selected:
+            # Create pulsing highlight effect
+            pulse = (pygame.time.get_ticks() // 100) % 2
+            if pulse:
+                # Draw highlight background
+                rendered_text = font.render(text, True, highlight_color)
+                highlight_rect = rendered_text.get_rect(center=center_pos)
+                highlight_surface = pygame.Surface((highlight_rect.width + 20, highlight_rect.height + 10))
+                highlight_surface.fill((50, 50, 50))
+                highlight_surface.set_alpha(100)
+                self.screen.blit(highlight_surface, highlight_rect.move(-10, -5))
+            else:
+                rendered_text = font.render(text, True, color)
+        else:
+            rendered_text = font.render(text, True, color)
+
+        text_rect = rendered_text.get_rect(center=center_pos)
+        self.screen.blit(rendered_text, text_rect)
 
         # Map system
         self.current_map_id = 'default'  # can be changed for other maps
@@ -55,72 +156,63 @@ class Game:
 
     def show_start_screen(self):
         # Background
-        self.screen.fill((20, 20, 40))  # Dark blue background
+        self.screen.fill(START_BG_COLOR)
 
         # Title
-        font_title = pygame.font.Font(None, 72)
-        title_text = font_title.render("PyZelda RPG", True, (255, 215, 0))
-        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        title_text = self.font_title.render("PyZelda RPG", True, TITLE_COLOR)
+        title_rect = title_text.get_rect(center=(WIDTH // 2, TITLE_Y_OFFSET))
         self.screen.blit(title_text, title_rect)
 
         # Subtitle
-        font_sub = pygame.font.Font(None, 36)
-        sub_text = font_sub.render("A Zelda-like Adventure", True, (200, 200, 200))
-        sub_rect = sub_text.get_rect(center=(WIDTH // 2, HEIGHT // 3 + 80))
+        sub_text = self.font_subtitle.render("A Zelda-like Adventure", True, SUBTITLE_COLOR)
+        sub_rect = sub_text.get_rect(center=(WIDTH // 2, SUBTITLE_Y_OFFSET))
         self.screen.blit(sub_text, sub_rect)
 
-        # Menu options
-        font_menu = pygame.font.Font(None, 48)
-        start_text = font_menu.render("Press ENTER to Start", True, (255, 255, 255))
-        quit_text = font_menu.render("Press ESC to Quit", True, (255, 255, 255))
+        # Menu options with highlight
+        self._render_highlighted_text("Start Game", self.font_menu, MENU_COLOR, TITLE_COLOR,
+                                    (WIDTH // 2, START_MENU_Y_OFFSET), self.selected_menu_option == 0)
+        self._render_highlighted_text("Quit Game", self.font_menu, MENU_COLOR, TITLE_COLOR,
+                                    (WIDTH // 2, QUIT_MENU_Y_OFFSET), self.selected_menu_option == 1)
 
-        start_rect = start_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
-        quit_rect = quit_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 120))
+        # Instructions
+        instruction_text = self.font_subtitle.render("Use ↑↓ to navigate, ENTER to select, ESC to quit", True, SUBTITLE_COLOR)
+        instruction_rect = instruction_text.get_rect(center=(WIDTH // 2, HEIGHT - 50))
+        self.screen.blit(instruction_text, instruction_rect)
 
-        self.screen.blit(start_text, start_rect)
-        self.screen.blit(quit_text, quit_rect)
-
-        # Decorative elements
-        # Draw some simple particles or effects
-        for i in range(20):
-            x = (pygame.time.get_ticks() // 50 + i * 50) % WIDTH
+        # Decorative elements - animated particles
+        current_time = pygame.time.get_ticks()
+        for i in range(PARTICLE_COUNT_START):
+            x = (current_time // 50 + i * 50) % WIDTH
             y = HEIGHT - 100 + (i % 3) * 20
-            pygame.draw.circle(self.screen, (100, 150, 255), (x, y), 3)
+            pygame.draw.circle(self.screen, PARTICLE_COLOR, (x, y), 3)
 
     def show_death_screen(self):
         # Dark red background
-        self.screen.fill((40, 0, 0))
+        self.screen.fill(DEATH_BG_COLOR)
 
         # Death title
-        font_title = pygame.font.Font(None, 72)
-        death_text = font_title.render("You Died", True, (255, 0, 0))
-        death_rect = death_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        death_text = self.font_title.render("You Died", True, DEATH_TITLE_COLOR)
+        death_rect = death_text.get_rect(center=(WIDTH // 2, TITLE_Y_OFFSET))
         self.screen.blit(death_text, death_rect)
 
         # Stats display
-        font_stats = pygame.font.Font(None, 36)
         exp = self.player.exp if self.player else 0
-        exp_text = font_stats.render(f"Experience Gained: {exp}", True, (255, 255, 255))
+        exp_text = self.font_stats.render(f"Experience Gained: {exp}", True, MENU_COLOR)
         exp_rect = exp_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         self.screen.blit(exp_text, exp_rect)
 
         # Restart options
-        font_menu = pygame.font.Font(None, 48)
-        restart_text = font_menu.render("Press R to Restart", True, (255, 255, 255))
-        quit_text = font_menu.render("Press ESC to Quit", True, (255, 255, 255))
+        restart_text = self.font_menu.render("Press R to Restart", True, MENU_COLOR)
+        quit_text = self.font_menu.render("Press ESC to Quit", True, MENU_COLOR)
 
-        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 80))
-        quit_rect = quit_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 140))
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, DEATH_MENU_Y_OFFSET))
+        quit_rect = quit_text.get_rect(center=(WIDTH // 2, DEATH_QUIT_Y_OFFSET))
 
         self.screen.blit(restart_text, restart_rect)
         self.screen.blit(quit_text, quit_rect)
 
         # Animated death particles
-        for i in range(50):
-            x = randint(0, WIDTH)
-            y = randint(0, HEIGHT)
-            size = randint(1, 3)
-            pygame.draw.circle(self.screen, (randint(100, 255), 0, 0), (x, y), size)
+        self._update_and_draw_death_particles()
 
     def fade(self, fade_in=False, speed=15):
         # fade_in: if True, fade from black to game; else fade to black
@@ -175,10 +267,18 @@ class Game:
                 if self.game_state == 'start':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN:
-                            self.game_state = 'game'
+                            if self.selected_menu_option == 0:  # Start Game
+                                self.game_state = 'game'
+                            elif self.selected_menu_option == 1:  # Quit Game
+                                pygame.quit()
+                                sys.exit()
                         elif event.key == pygame.K_ESCAPE:
                             pygame.quit()
                             sys.exit()
+                        elif event.key == pygame.K_UP:
+                            self.selected_menu_option = (self.selected_menu_option - 1) % 2
+                        elif event.key == pygame.K_DOWN:
+                            self.selected_menu_option = (self.selected_menu_option + 1) % 2
 
                 elif self.game_state == 'death':
                     if event.type == pygame.KEYDOWN:
@@ -274,7 +374,8 @@ class Game:
             # Check for player death
             if self.player and self.player.health <= 0 and self.game_state != 'death':
                 self.game_state = 'death'
-                self.death_sound.play()
+                if self.death_sound:
+                    self.death_sound.play()
 
             pygame.display.update()
             self.clock.tick(FPS)
