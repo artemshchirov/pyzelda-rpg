@@ -1,8 +1,5 @@
 import warnings
 import os
-
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-
 import pygame
 import sys
 import time
@@ -11,6 +8,8 @@ from random import randint
 from settings import WIDTH, HEIGHT, FPS, WATER_COLOR
 from level import Level
 from support import get_path
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 # Suppress warnings
 warnings.simplefilter('ignore', UserWarning)
