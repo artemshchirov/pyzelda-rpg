@@ -13,7 +13,6 @@ class Upgrade:
         self.font = pygame.font.Font(UI_FONT, UI_FONT_SIZE)
 
         # item creation
-        print(self.attributes_len)
         self.width = self.display_surface.get_size()[
             0] // (self.attributes_len + 1)
         self.height = self.display_surface.get_size()[1] * 0.8
@@ -42,9 +41,9 @@ class Upgrade:
                 self.items[self.selection_index].trigger(self.player)
 
     def selection_cooldown(self):
-        if not self.can_move:
+        if not self.can_move and self.selection_time is not None:
             current_time = pygame.time.get_ticks()
-            if current_time - self.selection_time >= 300:
+            if current_time - int(self.selection_time) >= 300:
                 self.can_move = True
 
     def create_items(self):
