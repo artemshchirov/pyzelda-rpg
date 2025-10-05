@@ -1,5 +1,5 @@
 import pygame
-from settings import *
+from settings import UI_FONT, UI_FONT_SIZE, HEALTH_BAR_WIDTH, BAR_HEIGHT, ENERGY_BAR_WIDTH, weapon_data, magic_data, UI_BG_COLOR, UI_BORDER_COLOR, TEXT_COLOR, UI_BORDER_COLOR_ACTIVE, HEALTH_COLOR, ENERGY_COLOR, ITEM_BOX_SIZE
 
 
 class UI:

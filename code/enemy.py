@@ -1,7 +1,7 @@
 import pygame
 
-from settings import *
-from support import import_folder
+from settings import monster_data
+from support import import_folder, get_path
 from entity import Entity
 from pathfinding_utils import astar, pos_to_grid, grid_to_pos
 

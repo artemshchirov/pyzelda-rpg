@@ -1,5 +1,5 @@
 import pygame
-from settings import *
+from settings import weapon_data, magic_data, HITBOX_OFFSET
 from support import get_path, import_folder
 from entity import Entity
 
@@ -185,13 +185,13 @@ class Player(Entity):
 
     def get_status(self):
         if self.direction.x == 0 and self.direction.y == 0:
-            if not 'idle' in self.status and not 'attack' in self.status:
+            if 'idle' not in self.status and 'attack' not in self.status:
                 self.status = self.status + '_idle'
 
             if self.attacking:
                 self.direction.x = 0
                 self.direction.y = 0
-                if not 'attack' in self.status:
+                if 'attack' not in self.status:
                     if 'idle' in self.status:
                         self.status = self.status.replace('_idle', '_attack')
                     else:
@@ -229,7 +229,6 @@ class Player(Entity):
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center=self.hitbox.center)
 
-        current_time = pygame.time.get_ticks()
         # flicker
         if not self.vulnerable:
             alpha = self.wave_value()

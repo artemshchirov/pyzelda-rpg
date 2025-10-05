@@ -1,15 +1,18 @@
 import warnings
-# Suppress pkg_resources deprecation warning from pygame
-warnings.filterwarnings('ignore', category=UserWarning, message='.*pkg_resources.*')
-
+import os
 import pygame
 import sys
 import time
-import os
+import math
 from random import randint
-from settings import *
+from settings import WIDTH, HEIGHT, FPS, WATER_COLOR
 from level import Level
 from support import get_path
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+
+# Suppress warnings
+warnings.simplefilter('ignore', UserWarning)
 
 # UI Constants
 START_BG_COLOR = (20, 20, 40)
@@ -39,9 +42,6 @@ PARTICLE_COUNT_DEATH = 30  # Reduced for performance
 
 class Game:
     def __init__(self):
-        import os
-        from save_manager import load_game
-        from player import Player
         pygame.init()
         pygame.display.set_caption('PyZelda RPG')
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -55,6 +55,19 @@ class Game:
         self.font_subtitle = pygame.font.Font(None, SUBTITLE_FONT_SIZE)
         self.font_menu = pygame.font.Font(None, MENU_FONT_SIZE)
         self.font_stats = pygame.font.Font(None, STATS_FONT_SIZE)
+
+        # Start screen audio
+        try:
+            self.start_music = pygame.mixer.Sound(get_path('../audio/main.ogg'))
+            self.start_music.set_volume(0.3)
+            self.menu_move_sound = pygame.mixer.Sound(get_path('../audio/sword.wav'))
+            self.menu_select_sound = pygame.mixer.Sound(get_path('../audio/sword.wav'))
+            self.menu_move_sound.set_volume(0.5)
+            self.menu_select_sound.set_volume(0.5)
+        except pygame.error:
+            self.start_music = None
+            self.menu_move_sound = None
+            self.menu_select_sound = None
 
         # Audio (with error handling)
         try:
@@ -162,9 +175,15 @@ class Game:
         # Background
         self.screen.fill(START_BG_COLOR)
 
-        # Title
+        # Play start music
+        if self.start_music and not pygame.mixer.get_busy():
+            self.start_music.play(-1)
+
+        # Animated Title
+        current_time = pygame.time.get_ticks()
+        title_y_offset = 10 * math.sin(current_time * 0.005)
         title_text = self.font_title.render("PyZelda RPG", True, TITLE_COLOR)
-        title_rect = title_text.get_rect(center=(WIDTH // 2, TITLE_Y_OFFSET))
+        title_rect = title_text.get_rect(center=(WIDTH // 2, TITLE_Y_OFFSET + title_y_offset))
         self.screen.blit(title_text, title_rect)
 
         # Subtitle
@@ -180,15 +199,20 @@ class Game:
 
         # Instructions
         instruction_text = self.font_subtitle.render("Use ↑↓ to navigate, ENTER to select, ESC to quit", True, SUBTITLE_COLOR)
-        instruction_rect = instruction_text.get_rect(center=(WIDTH // 2, HEIGHT - 50))
+        instruction_rect = instruction_text.get_rect(center=(WIDTH // 2, HEIGHT - 70))
         self.screen.blit(instruction_text, instruction_rect)
 
-        # Decorative elements - animated particles
-        current_time = pygame.time.get_ticks()
+        # Credits
+        credit_text = self.font_subtitle.render("PyZelda RPG - Open Source", True, SUBTITLE_COLOR)
+        credit_rect = credit_text.get_rect(center=(WIDTH // 2, HEIGHT - 30))
+        self.screen.blit(credit_text, credit_rect)
+
+        # Decorative elements - floating particles
         for i in range(PARTICLE_COUNT_START):
-            x = (current_time // 50 + i * 50) % WIDTH
-            y = HEIGHT - 100 + (i % 3) * 20
-            pygame.draw.circle(self.screen, PARTICLE_COLOR, (x, y), 3)
+            x = (current_time // 30 + i * 60) % WIDTH
+            y = (HEIGHT - 150 - (current_time // 20 + i * 30) % (HEIGHT // 2)) % HEIGHT
+            size = 2 + (i % 2)
+            pygame.draw.circle(self.screen, PARTICLE_COLOR, (x, y), size)
 
     def show_death_screen(self):
         # Dark red background
@@ -271,7 +295,11 @@ class Game:
                 if self.game_state == 'start':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN:
+                            if self.menu_select_sound:
+                                self.menu_select_sound.play()
                             if self.selected_menu_option == 0:  # Start Game
+                                if self.start_music:
+                                    self.start_music.stop()
                                 self.game_state = 'game'
                             elif self.selected_menu_option == 1:  # Quit Game
                                 pygame.quit()
@@ -280,8 +308,12 @@ class Game:
                             pygame.quit()
                             sys.exit()
                         elif event.key == pygame.K_UP:
+                            if self.menu_move_sound:
+                                self.menu_move_sound.play()
                             self.selected_menu_option = (self.selected_menu_option - 1) % 2
                         elif event.key == pygame.K_DOWN:
+                            if self.menu_move_sound:
+                                self.menu_move_sound.play()
                             self.selected_menu_option = (self.selected_menu_option + 1) % 2
 
                 elif self.game_state == 'death':
