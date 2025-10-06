@@ -81,3 +81,4 @@ Game progress is saved to `savegame.json` via `save_manager.save_game`, tracking
 - Tile layer CSVs must follow the naming convention `map_<map_id>_<LayerName>.csv`.
 - Reuse existing sprite groups and managers when extending gameplay so rendering, collisions, and UI stay in sync.
 - Press `ESC` while playing to open the pause menu (Resume / Settings). The Settings panel allows toggling audio via `IS_MUSIC_ENABLED` in `code/settings.py`.
+- Track releases with `GAME_VERSION` in `code/settings.py` and log each bump in `CHANGELOG.md`.

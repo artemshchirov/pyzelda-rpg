@@ -66,6 +66,12 @@ Game progress is written to `savegame.json` via `save_manager.save_game`. The fi
 - Press `ESC` in-game to open the pause overlay; use the Settings option there to toggle audio without leaving the session.
 - Default audio behaviour is controlled by `IS_MUSIC_ENABLED` in `code/settings.py`. Disabling it mutes both background music and SFX until re-enabled.
 
+## Versioning
+
+- The active version is defined as `GAME_VERSION` in `code/settings.py`; bump this constant when shipping new player-facing behaviour or fixes.
+- Document each bump at the top of `CHANGELOG.md` with the same version string, release date (`YYYY-MM-DD`), and concise bullet list of notable updates.
+- Visible references such as the start screen label read from `GAME_VERSION`, so updating the constant keeps UI and documentation aligned.
+
 ## Tile & UI Authoring Guide
 
 ### Adding or Updating Tiles
