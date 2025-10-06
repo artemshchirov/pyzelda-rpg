@@ -1,5 +1,6 @@
 import pygame
 
+from audio_utils import play_sound
 from settings import monster_data
 from support import import_folder, get_path
 from entity import Entity
@@ -106,7 +107,7 @@ class Enemy(Entity):
         if self.status == 'attack':
             self.attack_time = now
             self.damage_player(self.attack_damage, self.attack_type)
-            self.attack_sound.play()
+            play_sound(self.attack_sound)
         elif self.status == 'move':
             recalc = False
             if not self.path or now - self.last_path_time > self.path_recalc_interval:
@@ -177,7 +178,7 @@ class Enemy(Entity):
 
     def get_damage(self, player, attack_type):
         if self.vulnerable:
-            self.hit_sound.play()
+            play_sound(self.hit_sound)
             self.direction = self.get_player_distance_direction(player)[1]
             if attack_type == 'weapon':
                 self.health -= player.get_full_weapon_damage()
@@ -193,7 +194,7 @@ class Enemy(Entity):
             self.add_exp(self.exp)
             if self.trigger_exp_particles and self.last_player_pos:
                 self.trigger_exp_particles(self.rect.center, self.last_player_pos, self.exp)
-            self.death_sound.play()
+            play_sound(self.death_sound)
 
     def hit_reaction(self):
         if not self.vulnerable:

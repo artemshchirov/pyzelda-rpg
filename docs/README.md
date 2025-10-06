@@ -63,6 +63,8 @@ Game progress is written to `savegame.json` via `save_manager.save_game`. The fi
 - Tile layer CSVs must match the naming scheme `map_<map_id>_<LayerName>.csv` for `Level.create_map` to detect them.
 - Use `support.get_path` when referencing assets so that relative paths resolve consistently across platforms.
 - When adding systems, prefer extending existing sprite groups and managers to keep rendering and collision predictable.
+- Press `ESC` in-game to open the pause overlay; use the Settings option there to toggle audio without leaving the session.
+- Default audio behaviour is controlled by `IS_MUSIC_ENABLED` in `code/settings.py`. Disabling it mutes both background music and SFX until re-enabled.
 
 ## Tile & UI Authoring Guide
 

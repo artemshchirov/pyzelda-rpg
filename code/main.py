@@ -5,9 +5,11 @@ import sys
 import time
 import math
 from random import randint
-from settings import WIDTH, HEIGHT, FPS, WATER_COLOR
+import settings
+from settings import WIDTH, HEIGHT, FPS, WATER_COLOR, GAME_VERSION
 from level import Level
 from support import get_path
+from audio_utils import play_sound, stop_sound
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
@@ -56,9 +58,12 @@ class Game:
         self.font_menu = pygame.font.Font(None, MENU_FONT_SIZE)
         self.font_stats = pygame.font.Font(None, STATS_FONT_SIZE)
 
+        self.background_music_path = get_path('../audio/main.ogg')
+        self.background_music_volume = 0.3
+
         # Start screen audio
         try:
-            self.start_music = pygame.mixer.Sound(get_path('../audio/main.ogg'))
+            self.start_music = pygame.mixer.Sound(self.background_music_path)
             self.start_music.set_volume(0.3)
             self.menu_move_sound = pygame.mixer.Sound(get_path('../audio/sword.wav'))
             self.menu_select_sound = pygame.mixer.Sound(get_path('../audio/sword.wav'))
@@ -77,12 +82,7 @@ class Game:
             print("Warning: Could not load death sound effect")
             self.death_sound = None
 
-        try:
-            pygame.mixer.music.load(get_path('../audio/main.ogg'))
-            pygame.mixer.music.set_volume(0.3)
-            pygame.mixer.music.play(-1)  # Loop indefinitely
-        except pygame.error:
-            print("Warning: Could not load background music")
+        self._start_background_music()
 
         # Particle animation data
         self.death_particles = []
@@ -90,6 +90,36 @@ class Game:
 
         # Menu state
         self.selected_menu_option = 0  # 0 = Start, 1 = Quit
+
+        # Overlay menus
+        self.overlay_state = None  # None, 'pause', 'settings'
+        self.pause_menu_options = ['Resume', 'Settings']
+        self.pause_menu_index = 0
+        self.settings_menu_options = ['Sound', 'Back']
+        self.settings_menu_index = 0
+        self.prev_level_pause = False
+
+        # Map system
+        self.current_map_id = 'default'
+        self.player = None
+
+        # Check for save file
+        save_path = 'savegame.json'
+        loaded_data = None
+        self.show_save_dialog = False
+        self.save_dialog_result = None
+        if os.path.exists(save_path):
+            self.show_save_dialog = True
+            self.save_dialog_result = None
+
+        # Create player and level (but only if not in start state)
+        if loaded_data and 'player' in loaded_data:
+            self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data, on_transition=self.handle_transition)
+            self.player = self.level.player
+        else:
+            self.player = None  # Will be created by Level
+            self.level = Level(self.current_map_id, player=self.player, loaded_data=None, on_transition=self.handle_transition)
+            self.player = self.level.player
 
     def _init_death_particles(self):
         """Initialize death screen particles with random properties"""
@@ -147,29 +177,126 @@ class Game:
         text_rect = rendered_text.get_rect(center=center_pos)
         self.screen.blit(rendered_text, text_rect)
 
-        # Map system
-        self.current_map_id = 'default'  # can be changed for other maps
-        self.player = None
+    def _start_background_music(self):
+        if not getattr(self, 'background_music_path', None):
+            return
+        if not settings.IS_MUSIC_ENABLED:
+            pygame.mixer.music.stop()
+            return
+        try:
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.load(self.background_music_path)
+                pygame.mixer.music.set_volume(self.background_music_volume)
+                pygame.mixer.music.play(-1)
+            else:
+                pygame.mixer.music.set_volume(self.background_music_volume)
+        except pygame.error:
+            print("Warning: Could not load background music")
+            self.background_music_path = None
 
-        # Check for save file
-        save_path = 'savegame.json'
-        loaded_data = None
-        self.show_save_dialog = False
-        self.save_dialog_result = None
-        if os.path.exists(save_path):
-            self.show_save_dialog = True
-            self.save_dialog_result = None
-
-        # Create player and level (but only if not in start state)
-        if loaded_data and 'player' in loaded_data:
-            # If loading, player will be created by Level and then extracted
-            self.level = Level(self.current_map_id, player=None, loaded_data=loaded_data, on_transition=self.handle_transition)
-            self.player = self.level.player
+    def _apply_audio_settings(self):
+        if not settings.IS_MUSIC_ENABLED:
+            pygame.mixer.music.stop()
+            stop_sound(self.start_music)
         else:
-            # New game
-            self.player = None  # Will be created by Level
-            self.level = Level(self.current_map_id, player=self.player, loaded_data=None, on_transition=self.handle_transition)
-            self.player = self.level.player
+            if self.game_state == 'start':
+                if self.start_music and not pygame.mixer.get_busy():
+                    play_sound(self.start_music, loops=-1)
+            else:
+                self._start_background_music()
+
+    def open_pause_menu(self):
+        if self.overlay_state is None:
+            self.overlay_state = 'pause'
+            self.pause_menu_index = 0
+            if hasattr(self, 'level'):
+                self.prev_level_pause = getattr(self.level, 'game_paused', False)
+                self.level.game_paused = True
+
+    def close_pause_menu(self):
+        self.overlay_state = None
+        self.pause_menu_index = 0
+        if hasattr(self, 'level'):
+            self.level.game_paused = self.prev_level_pause
+        self.prev_level_pause = False
+
+    def show_pause_menu(self):
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        self.screen.blit(overlay, (0, 0))
+
+        title_text = self.font_title.render("Paused", True, TITLE_COLOR)
+        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        self.screen.blit(title_text, title_rect)
+
+        base_y = HEIGHT // 2
+        spacing = 70
+        for idx, option in enumerate(self.pause_menu_options):
+            center = (WIDTH // 2, base_y + idx * spacing)
+            self._render_highlighted_text(option, self.font_menu, MENU_COLOR, TITLE_COLOR, center, idx == self.pause_menu_index)
+
+    def show_settings_menu(self):
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        title_text = self.font_title.render("Settings", True, TITLE_COLOR)
+        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
+        self.screen.blit(title_text, title_rect)
+
+        options = [
+            f"Sound: {'On' if settings.IS_MUSIC_ENABLED else 'Off'}",
+            "Back"
+        ]
+        base_y = HEIGHT // 2
+        spacing = 70
+        for idx, option in enumerate(options):
+            center = (WIDTH // 2, base_y + idx * spacing)
+            self._render_highlighted_text(option, self.font_menu, MENU_COLOR, TITLE_COLOR, center, idx == self.settings_menu_index)
+
+    def handle_pause_event(self, event):
+        if event.type != pygame.KEYDOWN:
+            return
+        if event.key in (pygame.K_UP, pygame.K_w):
+            self.pause_menu_index = (self.pause_menu_index - 1) % len(self.pause_menu_options)
+            play_sound(self.menu_move_sound)
+        elif event.key in (pygame.K_DOWN, pygame.K_s):
+            self.pause_menu_index = (self.pause_menu_index + 1) % len(self.pause_menu_options)
+            play_sound(self.menu_move_sound)
+        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+            play_sound(self.menu_select_sound)
+            if self.pause_menu_index == 0:
+                self.close_pause_menu()
+            elif self.pause_menu_index == 1:
+                self.overlay_state = 'settings'
+                self.settings_menu_index = 0
+        elif event.key == pygame.K_ESCAPE:
+            self.close_pause_menu()
+
+    def handle_settings_event(self, event):
+        if event.type != pygame.KEYDOWN:
+            return
+        if event.key in (pygame.K_UP, pygame.K_w):
+            self.settings_menu_index = (self.settings_menu_index - 1) % len(self.settings_menu_options)
+            play_sound(self.menu_move_sound)
+        elif event.key in (pygame.K_DOWN, pygame.K_s):
+            self.settings_menu_index = (self.settings_menu_index + 1) % len(self.settings_menu_options)
+            play_sound(self.menu_move_sound)
+        elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+            if self.settings_menu_index == 0:
+                settings.IS_MUSIC_ENABLED = not settings.IS_MUSIC_ENABLED
+                self._apply_audio_settings()
+                play_sound(self.menu_select_sound)
+        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+            if self.settings_menu_index == 0:
+                settings.IS_MUSIC_ENABLED = not settings.IS_MUSIC_ENABLED
+                self._apply_audio_settings()
+                play_sound(self.menu_select_sound)
+            else:
+                self.overlay_state = 'pause'
+                play_sound(self.menu_select_sound)
+        elif event.key == pygame.K_ESCAPE:
+            self.overlay_state = 'pause'
 
     def show_start_screen(self):
         # Background
@@ -177,7 +304,7 @@ class Game:
 
         # Play start music
         if self.start_music and not pygame.mixer.get_busy():
-            self.start_music.play(-1)
+            play_sound(self.start_music, loops=-1)
 
         # Animated Title
         current_time = pygame.time.get_ticks()
@@ -206,6 +333,11 @@ class Game:
         credit_text = self.font_subtitle.render("PyZelda RPG - Open Source", True, SUBTITLE_COLOR)
         credit_rect = credit_text.get_rect(center=(WIDTH // 2, HEIGHT - 30))
         self.screen.blit(credit_text, credit_rect)
+
+        # Version info
+        version_text = self.font_stats.render(f"Version {GAME_VERSION}", True, SUBTITLE_COLOR)
+        version_rect = version_text.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
+        self.screen.blit(version_text, version_rect)
 
         # Decorative elements - floating particles
         for i in range(PARTICLE_COUNT_START):
@@ -292,41 +424,44 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
+                if self.overlay_state == 'pause':
+                    self.handle_pause_event(event)
+                    continue
+                if self.overlay_state == 'settings':
+                    self.handle_settings_event(event)
+                    continue
+
                 if self.game_state == 'start':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RETURN:
-                            if self.menu_select_sound:
-                                self.menu_select_sound.play()
+                            play_sound(self.menu_select_sound)
                             if self.selected_menu_option == 0:  # Start Game
-                                if self.start_music:
-                                    self.start_music.stop()
+                                stop_sound(self.start_music)
                                 self.game_state = 'game'
+                                self._start_background_music()
                             elif self.selected_menu_option == 1:  # Quit Game
                                 pygame.quit()
                                 sys.exit()
                         elif event.key == pygame.K_ESCAPE:
                             pygame.quit()
                             sys.exit()
-                        elif event.key == pygame.K_UP:
-                            if self.menu_move_sound:
-                                self.menu_move_sound.play()
+                        elif event.key in (pygame.K_UP, pygame.K_w):
+                            play_sound(self.menu_move_sound)
                             self.selected_menu_option = (self.selected_menu_option - 1) % 2
-                        elif event.key == pygame.K_DOWN:
-                            if self.menu_move_sound:
-                                self.menu_move_sound.play()
+                        elif event.key in (pygame.K_DOWN, pygame.K_s):
+                            play_sound(self.menu_move_sound)
                             self.selected_menu_option = (self.selected_menu_option + 1) % 2
 
                 elif self.game_state == 'death':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_r:
-                            # Restart game
                             self.game_state = 'game'
-                            # Reset player health and position
                             if self.player:
                                 self.player.health = self.player.stats['health']
                                 spawn_pos = self.level._player_spawn_pos if self.level._player_spawn_pos else (100, 100)
                                 self.player.pos = pygame.math.Vector2(spawn_pos)
                                 self.player.rect.center = spawn_pos
+                            self._start_background_music()
                         elif event.key == pygame.K_ESCAPE:
                             pygame.quit()
                             sys.exit()
@@ -340,7 +475,9 @@ class Game:
 
                 else:
                     if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_m:
+                        if event.key == pygame.K_ESCAPE:
+                            self.open_pause_menu()
+                        elif event.key == pygame.K_m:
                             self.level.toggle_menu()
                         # Save game when paused and P is pressed
                         if event.key == pygame.K_p and getattr(self.level, 'game_paused', False):
@@ -405,13 +542,22 @@ class Game:
                 continue
 
             self.screen.fill(WATER_COLOR)
-            self.level.run(dt)
+            if self.overlay_state:
+                self.level.visible_sprites.custom_draw(self.player)
+                self.level.ui.display(self.player)
+                if self.overlay_state == 'pause':
+                    self.show_pause_menu()
+                elif self.overlay_state == 'settings':
+                    self.show_settings_menu()
+            else:
+                self.level.run(dt)
 
             # Check for player death
             if self.player and self.player.health <= 0 and self.game_state != 'death':
                 self.game_state = 'death'
-                if self.death_sound:
-                    self.death_sound.play()
+                if self.overlay_state:
+                    self.close_pause_menu()
+                play_sound(self.death_sound)
 
             pygame.display.update()
             self.clock.tick(FPS)

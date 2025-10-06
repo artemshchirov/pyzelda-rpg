@@ -1,7 +1,9 @@
 import pygame
+
+from audio_utils import play_sound
+from entity import Entity
 from settings import weapon_data, magic_data, HITBOX_OFFSET
 from support import get_path, import_folder
-from entity import Entity
 
 
 class Player(Entity):
@@ -144,7 +146,7 @@ class Player(Entity):
                 self.attacking = True
                 self.attack_time = pygame.time.get_ticks()
                 self.create_attack()
-                self.weapon_attack_sound.play()
+                play_sound(self.weapon_attack_sound)
                 self.direction.x = 0
                 self.direction.y = 0
 

@@ -1,6 +1,8 @@
 import pygame
-from settings import magic_data, TILESIZE
 from random import randint
+
+from audio_utils import play_sound
+from settings import magic_data, TILESIZE
 
 
 class MagicPlayer:
@@ -15,7 +17,7 @@ class MagicPlayer:
 
     def heal(self, player, strength, cost, groups):
         if player.energy >= cost:
-            self.sounds['heal'].play()
+            play_sound(self.sounds['heal'])
             player.health += strength
             player.energy -= cost
             if player.health >= player.stats['health']:
@@ -28,7 +30,7 @@ class MagicPlayer:
     def flame(self, player, cost, groups):
         if player.energy >= cost:
             player.energy -= cost
-            self.sounds['flame'].play()
+            play_sound(self.sounds['flame'])
 
             status = player.status.split('_')[0]
             if status == 'up':

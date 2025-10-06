@@ -1,5 +1,11 @@
 from support import get_path
 
+# versioning
+GAME_VERSION = "0.2.0"
+
+# audio config
+IS_MUSIC_ENABLED = True
+
 # game setup
 WIDTH = 1280
 HEIGHT = 720

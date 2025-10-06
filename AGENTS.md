@@ -22,6 +22,7 @@ This repository runs on Python and Pygame. Always operate from the workspace roo
 - Launch the game loop with `python code/main.py`. The game starts in a menu state and transitions into the active `Level` once "Start" is selected.
 - Save data persists to `savegame.json` in the root directory. Delete the file when you need a clean slate.
 - When editing map CSVs, keep layer names aligned with `Level.create_map` expectations (`map_<map_id>_<Layer>.csv`).
+- Hit `ESC` during gameplay to open the pause overlay (Resume / Settings). Toggle audio from there; the default flag lives at `code/settings.py::IS_MUSIC_ENABLED`.
 
 ## Day-to-Day Commands
 
