@@ -7,6 +7,7 @@ class UI:
         # general
         self.display_surface = pygame.display.get_surface()
         self.font = pygame.font.Font(UI_FONT, UI_FONT_SIZE)
+        self.bottom_padding = 10
 
         # bar setup
         self.health_bar_rect = pygame.Rect(
@@ -28,6 +29,9 @@ class UI:
             path = magic['graphic']
             magic = pygame.image.load(path).convert_alpha()
             self.magic_graphics.append(magic)
+
+    def refresh_display_surface(self):
+        self.display_surface = pygame.display.get_surface()
 
     def show_bar(self, current, max_amount, bg_rect, color):
         # draw bg
@@ -69,14 +73,17 @@ class UI:
 
     # TODO refactor next 2 overlays to 1 function for reusability
     def weapon_overlay(self, weapon_index, has_switched):
-        bg_rect = self.selection_box(10, 630, has_switched)
+        top = max(self.display_surface.get_height() - ITEM_BOX_SIZE - self.bottom_padding, 10)
+        bg_rect = self.selection_box(10, top, has_switched)
         weapon_surf = self.weapon_graphics[weapon_index]
         weapon_rect = weapon_surf.get_rect(center=bg_rect.center)
 
         self.display_surface.blit(weapon_surf, weapon_rect)
 
     def magic_overlay(self, magic_index, has_switched):
-        bg_rect = self.selection_box(80, 635, has_switched)
+        top = max(self.display_surface.get_height() - ITEM_BOX_SIZE - self.bottom_padding, 10)
+        left = max(ITEM_BOX_SIZE, 10 + ITEM_BOX_SIZE - 10)
+        bg_rect = self.selection_box(left, top + 5, has_switched)
         magic_surf = self.magic_graphics[magic_index]
         magic_rect = magic_surf.get_rect(center=bg_rect.center)
 

@@ -1,6 +1,6 @@
 import pygame
 import os
-from settings import TILESIZE, WIDTH, HEIGHT
+from settings import TILESIZE
 from tile import Tile
 from player import Player
 from support import get_path, import_csv_layout, import_folder
@@ -98,11 +98,15 @@ class Level:
             'entities': import_csv_layout(file_or_default(map_file('Entities'), '../data/map/map_Entities.csv')),
         }
 
+        boundary_layout = layouts['boundary']
+        map_cols = len(boundary_layout[0]) if boundary_layout and boundary_layout[0] else 0
+        map_rows = len(boundary_layout) if boundary_layout else 0
+        map_pixel_width = map_cols * TILESIZE
+        map_pixel_height = map_rows * TILESIZE
+
         # Set default spawn to center of map if not specified
-        if self._player_spawn_pos is None:
-            map_width = len(layouts['boundary'][0]) * TILESIZE
-            map_height = len(layouts['boundary']) * TILESIZE
-            self._player_spawn_pos = (map_width // 2, map_height // 2)
+        if self._player_spawn_pos is None and map_pixel_width and map_pixel_height:
+            self._player_spawn_pos = (map_pixel_width // 2, map_pixel_height // 2)
 
         graphics = {
             'grass': import_folder('../graphics/grass'),
@@ -148,7 +152,7 @@ class Level:
                                  surf)
 
         # Now build the pathfinding grid
-        self.pathfinding_grid = build_grid(WIDTH, HEIGHT, TILESIZE, self.obstacle_sprites)
+        self.pathfinding_grid = build_grid(map_pixel_width, map_pixel_height, TILESIZE, self.obstacle_sprites)
 
         # Place entities (player and enemies) after grid is built
         entities_layout = layouts['entities']
@@ -291,6 +295,13 @@ class Level:
                 save_game(self.get_savable_state())
                 print("Game saved!")
 
+    def on_window_resized(self):
+        self.display_surface = pygame.display.get_surface()
+        if hasattr(self.visible_sprites, 'refresh_display_surface'):
+            self.visible_sprites.refresh_display_surface()
+        if hasattr(self.ui, 'refresh_display_surface'):
+            self.ui.refresh_display_surface()
+
     def run(self, dt):
         # update and draw the game
         self.visible_sprites.custom_draw(self.player)
@@ -311,8 +322,7 @@ class YSortCameraGroup(pygame.sprite.Group):
         super().__init__()
         # general setup
         self.display_surface = pygame.display.get_surface()
-        self.half_width = self.display_surface.get_size()[0] // 2
-        self.half_height = self.display_surface.get_size()[1] // 2
+        self.refresh_display_surface()
         self.offset = pygame.math.Vector2()
 
         # floor setup
@@ -339,3 +349,9 @@ class YSortCameraGroup(pygame.sprite.Group):
 
         for enemy in enemy_sprites:
             enemy.enemy_update(player)
+
+    def refresh_display_surface(self):
+        self.display_surface = pygame.display.get_surface()
+        width, height = self.display_surface.get_size()
+        self.half_width = width // 2
+        self.half_height = height // 2

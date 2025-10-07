@@ -7,8 +7,9 @@ GAME_VERSION = "0.2.0"
 IS_MUSIC_ENABLED = True
 
 # game setup
-WIDTH = 1280
-HEIGHT = 720
+# When WIDTH/HEIGHT are falsy, the window size is derived from the desktop resolution.
+WIDTH = None
+HEIGHT = None
 FPS = 120
 TILESIZE = 64
 HITBOX_OFFSET = {
